@@ -1,0 +1,25 @@
+WINDOWS MONITORING AGENT — SUMMARY
+================================================================================
+Generated: 2026-04-11 09:20:35
+
+Processes sampled: 270
+Services enumerated: 293
+Alerts: 66
+  Critical=0 High=3 Medium=21 Low=42 Info=0
+
+Top findings:
+ - [HIGH] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [HIGH] Potential Process Injection: No valid executable path — may indicate hollowing or access limits.
+ - [HIGH] Potential Process Injection: No valid executable path — may indicate hollowing or access limits.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.

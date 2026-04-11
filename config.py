@@ -15,31 +15,31 @@ LOG_DIRECTORY = "./logs"
 
 # Directory fragments and patterns (case-insensitive substring match on paths)
 SUSPICIOUS_PATH_FRAGMENTS: Tuple[str, ...] = (
-    r"C:\Users\Public",
-    r"C:\Windows\Temp",
-    r"C:\Temp",
-    r"\AppData\Local\Temp",
-    r"\AppData\Roaming",
-    r"\AppData\Local\Microsoft\Windows\INetCache",
-    r"\Downloads\",
-    r"\Desktop\",
-    r"\Startup\",
+    "C:\\Users\\Public",
+    "C:\\Windows\\Temp",
+    "C:\\Temp",
+    "\\AppData\\Local\\Temp",
+    "\\AppData\\Roaming",
+    "\\AppData\\Local\\Microsoft\\Windows\\INetCache",
+    "\\Downloads\\",
+    "\\Desktop\\",
+    "\\Startup\\",
 )
 
 # Writable / user profile areas (persistence and staging)
 USER_WRITABLE_PATH_FRAGMENTS: Tuple[str, ...] = (
-    r"\Users\",
-    r"\AppData\",
-    r"\ProgramData\",
+    "\\Users\\",
+    "\\AppData\\",
+    "\\ProgramData\\",
 )
 
 # Paths considered normal for OS binaries (service path sanity)
 SYSTEM_SERVICE_PREFIXES: Tuple[str, ...] = (
-    r"C:\Windows\System32",
-    r"C:\Windows\SysWOW64",
-    r"C:\Windows\",
-    r"systemroot\system32",
-    r"%systemroot%",
+    "C:\\Windows\\System32",
+    "C:\\Windows\\SysWOW64",
+    "C:\\Windows\\",
+    "systemroot\\system32",
+    "%systemroot%",
 )
 
 # --- Process allow / deny ---
@@ -89,14 +89,12 @@ PROCESS_BLACKLIST: FrozenSet[str] = frozenset(
 )
 
 # Processes that should normally appear at most once (possible masquerading if duplicated)
+# Only flag names that should almost never appear twice in a healthy session.
 SINGLETON_PROCESS_NAMES: FrozenSet[str] = frozenset(
     {
         "lsass.exe",
         "winlogon.exe",
         "services.exe",
-        "smss.exe",
-        "csrss.exe",
-        "wininit.exe",
     }
 )
 

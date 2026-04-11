@@ -44,7 +44,7 @@ def _path_under_system_prefixes(path_lower: str) -> bool:
     for prefix in config.SYSTEM_SERVICE_PREFIXES:
         if path_lower.strip().startswith(prefix.lower()):
             return True
-    return "system32" in path_lower or r"\windows\" in path_lower
+    return "system32" in path_lower or "\\windows\\" in path_lower
 
 
 def _extract_binary_path(path_name: str) -> str:
@@ -143,7 +143,7 @@ class ServiceAuditor:
                         exe_path=exe_path,
                         service_type=cfg[0],
                     )
-                except OSError:
+                except Exception:
                     continue
         finally:
             win32service.CloseServiceHandle(hscm)
