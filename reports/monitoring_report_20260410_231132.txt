@@ -1,0 +1,149 @@
+====================================================================================================
+WINDOWS SERVICE & PROCESS MONITORING REPORT
+====================================================================================================
+Report Generated: 2026-04-10 23:11:32
+====================================================================================================
+
+EXECUTIVE SUMMARY
+----------------------------------------------------------------------------------------------------
+Total Processes Analyzed: 255
+Total Services Audited: 293
+Total Alerts Generated: 8
+  - Critical: 0
+  - High: 2
+  - Medium: 6
+  - Low: 0
+  - Info: 0
+
+====================================================================================================
+DETAILED ALERTS
+====================================================================================================
+
+Alert #1
+----------------------------------------------------------------------------------------------------
+Type: Potential Process Injection
+Severity: HIGH
+Timestamp: 2026-04-10 23:11:31.955061
+Description: Process running without valid executable path - potential process hollowing
+Process Name: system idle process
+Pid: 0
+
+Alert #2
+----------------------------------------------------------------------------------------------------
+Type: Potential Process Injection
+Severity: HIGH
+Timestamp: 2026-04-10 23:11:31.955075
+Description: Process running without valid executable path - potential process hollowing
+Process Name: Unknown
+Pid: 140
+
+Alert #3
+----------------------------------------------------------------------------------------------------
+Type: Unknown Auto-Start Service
+Severity: MEDIUM
+Timestamp: 2026-04-10 23:11:32.164839
+Description: Unknown service set to auto-start: ClickToRunSvc
+Service Name: ClickToRunSvc
+Display Name: Microsoft Office Click-to-Run Service
+Path: "C:\Program Files\Common Files\Microsoft Shared\ClickToRun\OfficeClickToRun.exe" /service
+Status: Running
+Start Type: Auto
+
+Alert #4
+----------------------------------------------------------------------------------------------------
+Type: Unknown Auto-Start Service
+Severity: MEDIUM
+Timestamp: 2026-04-10 23:11:32.164998
+Description: Unknown service set to auto-start: MongoDB
+Service Name: MongoDB
+Display Name: MongoDB Server (MongoDB)
+Path: "C:\Program Files\MongoDB\Server\8.0\bin\mongod.exe" --config "C:\Program Files\MongoDB\Server\8.0\bin\mongod.cfg" --service
+Status: Running
+Start Type: Auto
+
+Alert #5
+----------------------------------------------------------------------------------------------------
+Type: Unknown Auto-Start Service
+Severity: MEDIUM
+Timestamp: 2026-04-10 23:11:32.165102
+Description: Unknown service set to auto-start: VMAuthdService
+Service Name: VMAuthdService
+Display Name: VMware Authorization Service
+Path: "C:\Program Files (x86)\VMware\VMware Player\vmware-authd.exe"
+Status: Running
+Start Type: Auto
+
+Alert #6
+----------------------------------------------------------------------------------------------------
+Type: Unknown Auto-Start Service
+Severity: MEDIUM
+Timestamp: 2026-04-10 23:11:32.165115
+Description: Unknown service set to auto-start: VMUSBArbService
+Service Name: VMUSBArbService
+Display Name: VMware USB Arbitration Service
+Path: "C:\Program Files (x86)\Common Files\VMware\USB\vmware-usbarbitrator64.exe"
+Status: Running
+Start Type: Auto
+
+Alert #7
+----------------------------------------------------------------------------------------------------
+Type: Unknown Auto-Start Service
+Severity: MEDIUM
+Timestamp: 2026-04-10 23:11:32.165131
+Description: Unknown service set to auto-start: WDDriveService
+Service Name: WDDriveService
+Display Name: WD Drive Manager
+Path: "C:\Program Files (x86)\Western Digital\WD Drive Manager\WDDriveService.exe"
+Status: Running
+Start Type: Auto
+
+Alert #8
+----------------------------------------------------------------------------------------------------
+Type: Unknown Auto-Start Service
+Severity: MEDIUM
+Timestamp: 2026-04-10 23:11:32.165165
+Description: Unknown service set to auto-start: WSLService
+Service Name: WSLService
+Display Name: WSL Service
+Path: "C:\Program Files\WSL\wslservice.exe"
+Status: Running
+Start Type: Auto
+
+====================================================================================================
+PROCESS ANALYSIS
+====================================================================================================
+
+Suspicious Parent-Child Relationships: 0
+
+Unauthorized/Suspicious Processes: 0
+
+====================================================================================================
+SERVICE ANALYSIS
+====================================================================================================
+
+Auto-Start Services: 88
+
+Suspicious Services: 6
+  - ClickToRunSvc: Unknown service set to auto-start: ClickToRunSvc
+  - MongoDB: Unknown service set to auto-start: MongoDB
+  - VMAuthdService: Unknown service set to auto-start: VMAuthdService
+  - VMUSBArbService: Unknown service set to auto-start: VMUSBArbService
+  - WDDriveService: Unknown service set to auto-start: WDDriveService
+  - WSLService: Unknown service set to auto-start: WSLService
+
+====================================================================================================
+RECOMMENDATIONS
+====================================================================================================
+
+⚠ HIGH: Urgent investigation needed
+  - Review all high-severity alerts
+  - Check for signs of compromise
+  - Review authentication logs
+
+⚠ MEDIUM: Further investigation recommended
+  - Review medium-severity alerts during normal operations
+  - Verify legitimacy of flagged processes/services
+
+====================================================================================================
+END OF REPORT
+====================================================================================================
