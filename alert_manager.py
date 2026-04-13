@@ -14,6 +14,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 from colorama import Fore, Style, init
 
 import config
+from path_utils import ensure_alert_path_field
 
 init(autoreset=True)
 
@@ -90,7 +91,7 @@ class AlertManager:
         }
 
     def _normalize_alert(self, alert: Dict[str, Any]) -> Dict[str, Any]:
-        a = dict(alert)
+        a = ensure_alert_path_field(dict(alert))
         if "reason" not in a and "description" in a:
             a["reason"] = a["description"]
         if "description" not in a and "reason" in a:
@@ -199,7 +200,7 @@ class AlertManager:
         for alert in self.get_all_alerts():
             self.print_alert(alert)
 
-    def save_alerts_to_file(self, filename: Optional[str] = None) -> str:
+    def save_alerts_to_file(self, filename: Optional[str] = None, *, quiet: bool = False) -> str:
         if filename is None:
             filename = f"alerts_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         os.makedirs(config.LOG_DIRECTORY, exist_ok=True)
@@ -222,7 +223,8 @@ class AlertManager:
         }
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2)
-        print(f"\n{Fore.GREEN}Alerts JSON: {filepath}{Style.RESET_ALL}")
+        if not quiet:
+            print(f"\n{Fore.GREEN}Alerts JSON: {filepath}{Style.RESET_ALL}")
         return filepath
 
     def get_statistics(self) -> Dict[str, int]:

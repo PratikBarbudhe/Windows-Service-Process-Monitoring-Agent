@@ -135,3 +135,155 @@
 2026-04-11 09:20:34,858 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
 2026-04-11 09:20:34,858 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
 2026-04-11 09:20:34,858 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:18:57,800 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,801 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,802 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:18:57,803 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:18:57,803 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:18:57,803 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:18:57,803 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:18:57,803 | INFO | alert_manager | Alert [HIGH] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [HIGH] Potential Process Injection — No valid executable path — may indicate hollowing or access limits.
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [HIGH] Potential Process Injection — No valid executable path — may indicate hollowing or access limits.
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,804 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,805 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,805 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,805 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:18:57,805 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:19:28,583 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:41:55,460 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,461 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,462 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 10:41:55,463 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,463 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [HIGH] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,464 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [HIGH] Potential Process Injection — No valid executable path — may indicate hollowing or access limits.
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [HIGH] Potential Process Injection — No valid executable path — may indicate hollowing or access limits.
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,465 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,466 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:41:55,466 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 10:42:26,949 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:04,279 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,279 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,280 | INFO | alert_manager | Alert [LOW] Process from User-Writable Location — Executable resides under a user-writable profile path.
+2026-04-11 11:04:04,281 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 11:04:04,281 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 11:04:04,281 | INFO | alert_manager | Alert [MEDIUM] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 11:04:04,281 | INFO | alert_manager | Alert [HIGH] Suspicious Command Line — Command line matches suspicious substring heuristics.
+2026-04-11 11:04:04,282 | INFO | alert_manager | Alert [HIGH] Potential Process Injection — No valid executable path — may indicate hollowing or access limits.
+2026-04-11 11:04:04,282 | INFO | alert_manager | Alert [HIGH] Potential Process Injection — No valid executable path — may indicate hollowing or access limits.
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:04,283 | INFO | alert_manager | Alert [LOW] Orphan or Hidden Parent Process — Parent PID is not present in the enumerated snapshot (exited or protected).
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.
+2026-04-11 11:04:32,479 | INFO | alert_manager | Alert [MEDIUM] Auto-Start Service Outside System Directories — Running auto-start service with binary outside typical Windows paths.

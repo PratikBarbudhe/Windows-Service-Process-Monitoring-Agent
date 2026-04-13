@@ -90,7 +90,13 @@ class ProcessAnalyzer:
                             parent_name = "unknown"
 
                 name_raw = pinfo.get("name") or "unknown"
-                exe = pinfo.get("exe") or ""
+                exe = (pinfo.get("exe") or "").strip()
+                if not exe and pid is not None:
+                    try:
+                        exe = (psutil.Process(pid).exe() or "").strip()
+                    except (psutil.Error, OSError) as ex:
+                        logger.debug("exe() unavailable for PID %s: %s", pid, ex)
+                        exe = ""
                 cmdline_list = pinfo.get("cmdline")
                 cmdline = _normalize_cmdline(cmdline_list)
                 username = pinfo.get("username") or "N/A"
@@ -145,6 +151,11 @@ class ProcessAnalyzer:
             if parent_name in ("winword.exe", "excel.exe", "outlook.exe", "powerpnt.exe"):
                 sev = config.SEVERITY_CRITICAL
 
+            parent_path = "N/A"
+            if proc.ppid and proc.ppid in self.processes:
+                parent_path = self.processes[proc.ppid].exe_path
+
+            child_path = proc.exe_path if proc.exe_path not in ("", "N/A") else ""
             anomalies.append(
                 {
                     "type": "Suspicious Parent-Child Relationship",
@@ -153,9 +164,11 @@ class ProcessAnalyzer:
                     "timestamp": datetime.now(),
                     "parent_name": parent_name,
                     "parent_pid": proc.ppid,
+                    "parent_path": parent_path,
                     "child_name": child_name,
                     "child_pid": pid,
-                    "child_path": proc.exe_path,
+                    "child_path": child_path or proc.exe_path,
+                    "path": child_path or proc.exe_path,
                     "cmdline": proc.cmdline,
                     "username": proc.username,
                     "reason": (
@@ -350,6 +363,14 @@ class ProcessAnalyzer:
         for name, count in by_name.items():
             if name in config.SINGLETON_PROCESS_NAMES and count > 1:
                 pids = [pid for pid, p in self.processes.items() if p.name == name]
+                paths_known = [
+                    self.processes[x].exe_path
+                    for x in pids
+                    if x in self.processes and self.processes[x].exe_path not in ("", "N/A")
+                ]
+                path_field = paths_known[0] if len(paths_known) == 1 else " | ".join(paths_known[:6])
+                if len(paths_known) > 6:
+                    path_field += " | …"
                 out.append(
                     {
                         "type": "Duplicate Critical Process Name",
@@ -357,7 +378,9 @@ class ProcessAnalyzer:
                         "risk_score": _risk_score(config.SEVERITY_CRITICAL),
                         "timestamp": datetime.now(),
                         "process_name": name,
+                        "pid": pids[0] if pids else None,
                         "pid_list": pids,
+                        "path": path_field or "N/A",
                         "count": count,
                         "reason": "More than one instance of a process that is normally singular.",
                         "description": f"{count} running instances of {name} — possible masquerading.",
@@ -368,6 +391,14 @@ class ProcessAnalyzer:
             if count >= 4 and name not in ("svchost.exe", "dllhost.exe", "conhost.exe"):
                 paths = {self.processes[pid].exe_path for pid, p in self.processes.items() if p.name == name}
                 if len(paths) >= 3:
+                    good_paths = [p for p in paths if p not in ("", "N/A")]
+                    path_field = " | ".join(sorted(good_paths)[:6])
+                    if len(good_paths) > 6:
+                        path_field += " | …"
+                    sample_pid = next(
+                        (pid for pid, p in self.processes.items() if p.name == name),
+                        None,
+                    )
                     out.append(
                         {
                             "type": "Duplicate Process Name (Many Paths)",
@@ -375,6 +406,8 @@ class ProcessAnalyzer:
                             "risk_score": _risk_score(config.SEVERITY_MEDIUM),
                             "timestamp": datetime.now(),
                             "process_name": name,
+                            "pid": sample_pid,
+                            "path": path_field or "N/A",
                             "count": count,
                             "distinct_paths": len(paths),
                             "reason": "Many concurrent processes share the same name from different paths.",

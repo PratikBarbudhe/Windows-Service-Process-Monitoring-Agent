@@ -78,6 +78,14 @@ class MonitoringAgent:
         fresh = current - self._seen_signatures
         for name, path in sorted(fresh):
             desc = f"New signature observed: {name} @ {path or 'N/A'}"
+            pid_match = next(
+                (
+                    pid
+                    for pid, p in self.process_analyzer.processes.items()
+                    if p.name.lower() == name and (p.exe_path or "").lower() == path
+                ),
+                None,
+            )
             self.alert_manager.add_alert(
                 {
                     "type": "New Process Signature",
@@ -85,6 +93,7 @@ class MonitoringAgent:
                     "risk_score": config.RISK_SCORES[config.SEVERITY_INFO],
                     "timestamp": datetime.now(),
                     "process_name": name,
+                    "pid": pid_match,
                     "path": path or "N/A",
                     "reason": "First observation of this name/path pair during this session.",
                     "description": desc,

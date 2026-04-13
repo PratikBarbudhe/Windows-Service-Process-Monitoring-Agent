@@ -27,6 +27,7 @@ def get_simulated_alerts() -> List[Dict[str, Any]]:
             "child_name": "powershell.exe",
             "child_pid": 9001,
             "child_path": r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+            "path": r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
             "cmdline": "powershell.exe -NoP -W Hidden -EncodedCommand JAB...",
             "username": "DEMO\\user",
             "reason": "DEMO: Office process spawned PowerShell with encoded payload pattern.",

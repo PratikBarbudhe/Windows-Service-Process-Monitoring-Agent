@@ -3,3 +3,4 @@ pywin32>=305
 WMI>=1.5.1
 colorama>=0.4.6
 streamlit>=1.28.0
+PyQt6>=6.5.0

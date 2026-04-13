@@ -1,0 +1,25 @@
+WINDOWS MONITORING AGENT — SUMMARY
+================================================================================
+Generated: 2026-04-11 11:04:32
+
+Processes sampled: 262
+Services enumerated: 293
+Alerts: 42
+  Critical=0 High=3 Medium=11 Low=28 Info=0
+
+Top findings:
+ - [HIGH] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [HIGH] Potential Process Injection: No valid executable path — may indicate hollowing or access limits.
+ - [HIGH] Potential Process Injection: No valid executable path — may indicate hollowing or access limits.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Suspicious Command Line: Command line matches suspicious substring heuristics.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [MEDIUM] Auto-Start Service Outside System Directories: Running auto-start service with binary outside typical Windows paths.
+ - [LOW] Process from User-Writable Location: Executable resides under a user-writable profile path.
