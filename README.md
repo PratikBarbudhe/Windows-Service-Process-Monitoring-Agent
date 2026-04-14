@@ -56,6 +56,16 @@ This monitoring agent analyzes Windows services and processes to identify anomal
 pip install -r requirements.txt
 ```
 
+3. **Install the package locally**
+```bash
+pip install .
+```
+
+4. **Run the monitoring CLI**
+```bash
+monitor-agent
+```
+
 The required packages are:
 - `psutil` - Process and system utilities
 - `pywin32` - Windows API access
