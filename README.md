@@ -85,6 +85,29 @@ dist\monitor-agent.exe --help
 
 The executable is written to `dist/monitor-agent.exe`.
 
+### Configure output directories
+
+The agent supports environment variables and CLI flags for runtime directories.
+
+- `WSPMA_OUTPUT_DIR` — base directory for generated logs and reports
+- `WSPMA_REPORT_DIR` — specific reports directory
+- `WSPMA_LOG_DIR` — specific log directory
+
+CLI directory flags:
+- `--output-dir DIR` — base path for `reports/` and `logs/`
+- `--report-dir DIR` — reports path override
+- `--log-dir DIR` — logs path override
+
+Example:
+```bash
+monitor-agent --output-dir C:\agent-output --csv --scan-json
+```
+
+Or:
+```bash
+WSPMA_LOG_DIR=C:\agent-logs WSPMA_REPORT_DIR=C:\agent-reports monitor-agent
+```
+
 The required packages are:
 - `psutil` - Process and system utilities
 - `pywin32` - Windows API access

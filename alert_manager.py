@@ -22,12 +22,19 @@ logger = logging.getLogger(__name__)
 
 
 def _ensure_agent_logging(log_dir: str = config.LOG_DIRECTORY) -> None:
-    """Attach a rotating-friendly file handler once (idempotent for repeated imports)."""
+    """Attach a rotating-friendly file handler once, and reconfigure it if the log path changes."""
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, "agent.log")
     root = logging.getLogger()
-    if getattr(root, "_agent_file_handler_configured", False):
+
+    existing_handler = getattr(root, "_agent_file_handler", None)
+    existing_dir = getattr(root, "_agent_file_handler_dir", None)
+    if getattr(root, "_agent_file_handler_configured", False) and existing_dir == log_dir:
         return
+
+    if existing_handler is not None:
+        root.removeHandler(existing_handler)
+
     fh = logging.FileHandler(log_path, encoding="utf-8")
     fh.setLevel(logging.INFO)
     fh.setFormatter(
@@ -36,9 +43,26 @@ def _ensure_agent_logging(log_dir: str = config.LOG_DIRECTORY) -> None:
     root.addHandler(fh)
     root.setLevel(min(root.level or logging.INFO, logging.INFO))
     setattr(root, "_agent_file_handler_configured", True)
+    setattr(root, "_agent_file_handler", fh)
+    setattr(root, "_agent_file_handler_dir", log_dir)
 
 
-_ensure_agent_logging()
+class AlertManager:
+    """Collects alerts, deduplicates, prints colorized summaries, and persists JSON."""
+
+    def __init__(self, dedup: bool = False) -> None:
+        _ensure_agent_logging()
+        self.alerts: List[Dict[str, Any]] = []
+        self.dedup_enabled = dedup
+        self._seen_fingerprints: Set[str] = set()
+        self.duplicates_suppressed = 0
+        self.alert_counts: Dict[str, int] = {
+            config.SEVERITY_CRITICAL: 0,
+            config.SEVERITY_HIGH: 0,
+            config.SEVERITY_MEDIUM: 0,
+            config.SEVERITY_LOW: 0,
+            config.SEVERITY_INFO: 0,
+        }
 
 
 def _fingerprint(alert: Dict[str, Any]) -> str:

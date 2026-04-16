@@ -279,6 +279,30 @@ def _configure_logging(verbose: bool) -> None:
     )
 
 
+def _normalize_path(path: str) -> str:
+    return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
+
+
+def _configure_output_directories(
+    output_dir: Optional[str], report_dir: Optional[str], log_dir: Optional[str]
+) -> None:
+    if output_dir:
+        base_dir = _normalize_path(output_dir)
+        config.REPORT_DIRECTORY = os.path.join(base_dir, "reports")
+        config.LOG_DIRECTORY = os.path.join(base_dir, "logs")
+    if report_dir:
+        config.REPORT_DIRECTORY = _normalize_path(report_dir)
+    if log_dir:
+        config.LOG_DIRECTORY = _normalize_path(log_dir)
+
+    try:
+        os.makedirs(config.REPORT_DIRECTORY, exist_ok=True)
+        os.makedirs(config.LOG_DIRECTORY, exist_ok=True)
+    except OSError as exc:
+        print(f"{Fore.RED}[!] Unable to create output directories: {exc}{Style.RESET_ALL}")
+        sys.exit(1)
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Windows Service & Process Monitoring Agent",
@@ -291,12 +315,28 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--simulate", action="store_true", help="Append demo alerts for walkthroughs")
     p.add_argument("--csv", action="store_true", help="Export alerts CSV under reports/")
     p.add_argument("--scan-json", action="store_true", help="Write combined scan JSON under logs/")
+    p.add_argument(
+        "--output-dir",
+        metavar="DIR",
+        help="Base directory for logs and reports (overrides defaults)",
+    )
+    p.add_argument(
+        "--report-dir",
+        metavar="DIR",
+        help="Output directory for report files (overrides output-dir)",
+    )
+    p.add_argument(
+        "--log-dir",
+        metavar="DIR",
+        help="Output directory for JSON logs and agent logs (overrides output-dir)",
+    )
     p.add_argument("--verbose", action="store_true", help="Verbose logging")
     return p
 
 
 def main() -> None:
     args = build_arg_parser().parse_args()
+    _configure_output_directories(args.output_dir, args.report_dir, args.log_dir)
     _configure_logging(args.verbose)
 
     agent = MonitoringAgent(dedup_alerts=False)

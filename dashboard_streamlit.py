@@ -12,9 +12,10 @@ import os
 from glob import glob
 from typing import Any, Dict, List
 
+import config
 import streamlit as st
 
-LOG_DIR = os.path.join(os.path.dirname(__file__), "logs")
+LOG_DIR = config.LOG_DIRECTORY
 
 
 def _load_latest_alerts_json() -> Dict[str, Any]:

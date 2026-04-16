@@ -7,11 +7,22 @@ weights used across process analysis, service auditing, and alerting.
 
 from __future__ import annotations
 
+import os
 from typing import Dict, FrozenSet, List, Tuple
 
+
+def _resolve_directory(path: str) -> str:
+    return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
+
+OUTPUT_DIRECTORY = _resolve_directory(os.environ.get("WSPMA_OUTPUT_DIR", "."))
+REPORT_DIRECTORY = _resolve_directory(
+    os.environ.get("WSPMA_REPORT_DIR", os.path.join(OUTPUT_DIRECTORY, "reports"))
+)
+LOG_DIRECTORY = _resolve_directory(
+    os.environ.get("WSPMA_LOG_DIR", os.path.join(OUTPUT_DIRECTORY, "logs"))
+)
+
 # --- Paths ---
-REPORT_DIRECTORY = "./reports"
-LOG_DIRECTORY = "./logs"
 
 # Directory fragments and patterns (case-insensitive substring match on paths)
 SUSPICIOUS_PATH_FRAGMENTS: Tuple[str, ...] = (
