@@ -66,6 +66,25 @@ pip install .
 monitor-agent
 ```
 
+### Build a standalone Windows executable
+
+1. **Install developer build dependencies**
+```bash
+python -m pip install -r requirements-dev.txt
+```
+
+2. **Build the executable**
+```bash
+python build_exe.py
+```
+
+3. **Run the generated executable**
+```bash
+dist\monitor-agent.exe --help
+```
+
+The executable is written to `dist/monitor-agent.exe`.
+
 The required packages are:
 - `psutil` - Process and system utilities
 - `pywin32` - Windows API access
