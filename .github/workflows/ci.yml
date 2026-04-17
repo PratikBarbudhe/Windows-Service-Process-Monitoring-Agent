@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    name: Build and package on Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -e .
+
+      - name: Validate Python syntax
+        run: python -m py_compile monitor_agent.py dashboard_streamlit.py build_exe.py
+
+      - name: Run package import smoke test
+        run: |
+          python -c "import monitor_agent, dashboard_streamlit, config; print('import ok')"
+
+      - name: Build standalone executable
+        run: python build_exe.py
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-agent-exe
+          path: dist/monitor-agent.exe

@@ -85,6 +85,18 @@ dist\monitor-agent.exe --help
 
 The executable is written to `dist/monitor-agent.exe`.
 
+### Continuous integration
+This repository includes a GitHub Actions workflow to validate the Python package, run syntax checks, and build the standalone Windows executable automatically on push and pull request events.
+
+- Workflow file: `.github/workflows/ci.yml`
+- Runner: `windows-latest`
+- Steps:
+  - install dependencies
+  - install the package locally
+  - validate Python syntax
+  - build the executable with `build_exe.py`
+  - upload `dist/monitor-agent.exe` as an artifact
+
 ### Configure output directories
 
 The agent supports environment variables and CLI flags for runtime directories.
