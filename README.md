@@ -108,6 +108,27 @@ Or:
 WSPMA_LOG_DIR=C:\agent-logs WSPMA_REPORT_DIR=C:\agent-reports monitor-agent
 ```
 
+### Streamlit dashboard
+
+The agent includes a deployable Streamlit dashboard for interactive alert review.
+
+Run the dashboard from the repository root:
+```bash
+streamlit run dashboard_streamlit.py
+```
+
+The dashboard will:
+- load the most recent `alerts_*.json` or `scan_*.json` file from the configured log directory
+- let you select from available alert files
+- let you upload any alert JSON manually
+- show severity metrics, alert counts, and the full alert table
+- expose raw JSON in an expandable view
+
+If the dashboard does not find logs in the default directory, use:
+```bash
+WSPMA_LOG_DIR=C:\agent-logs streamlit run dashboard_streamlit.py
+```
+
 The required packages are:
 - `psutil` - Process and system utilities
 - `pywin32` - Windows API access
