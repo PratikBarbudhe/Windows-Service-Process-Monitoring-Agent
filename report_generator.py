@@ -133,10 +133,6 @@ class ReportGenerator:
             f.write("\nEND OF REPORT\n")
         return filepath
 
-    def generate_text_report(self, filename: Optional[str] = None) -> str:
-        """Backwards-compatible alias: detailed report."""
-        return self.generate_detailed_report(filename)
-
     def export_alerts_csv(self, filename: Optional[str] = None) -> str:
         """Flatten alerts for spreadsheets or SIEM staging."""
         if filename is None:

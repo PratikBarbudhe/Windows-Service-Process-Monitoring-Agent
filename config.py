@@ -8,7 +8,7 @@ weights used across process analysis, service auditing, and alerting.
 from __future__ import annotations
 
 import os
-from typing import Dict, FrozenSet, List, Tuple
+from typing import Dict, FrozenSet, Tuple
 
 
 def _resolve_directory(path: str) -> str:
@@ -53,36 +53,7 @@ SYSTEM_SERVICE_PREFIXES: Tuple[str, ...] = (
     "%systemroot%",
 )
 
-# --- Process allow / deny ---
-PROCESS_WHITELIST: FrozenSet[str] = frozenset(
-    {
-        "system",
-        "smss.exe",
-        "csrss.exe",
-        "wininit.exe",
-        "services.exe",
-        "lsass.exe",
-        "svchost.exe",
-        "explorer.exe",
-        "winlogon.exe",
-        "dwm.exe",
-        "taskhostw.exe",
-        "searchindexer.exe",
-        "spoolsv.exe",
-        "conhost.exe",
-        "fontdrvhost.exe",
-        "sihost.exe",
-        "ctfmon.exe",
-        "runtimebroker.exe",
-        "dllhost.exe",
-        "audiodg.exe",
-        "wudfhost.exe",
-        "registry",
-        "idle",
-        "secure system",
-    }
-)
-
+# --- Process detection lists ---
 PROCESS_BLACKLIST: FrozenSet[str] = frozenset(
     {
         "mimikatz.exe",
@@ -203,5 +174,4 @@ RISK_SCORES: Dict[str, int] = {
     SEVERITY_INFO: 10,
 }
 
-# Backwards compatibility: older modules used SUSPICIOUS_PATHS
-SUSPICIOUS_PATHS: List[str] = list(SUSPICIOUS_PATH_FRAGMENTS)
+

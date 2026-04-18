@@ -25,6 +25,27 @@ try:
 except ImportError:  # pragma: no cover
     wmi_module = None
 
+# Win32 Service status and start type mappings for SCM enumeration
+WIN32_START_TYPE_MAP = {
+    win32service.SERVICE_AUTO_START: "Auto",
+    win32service.SERVICE_BOOT_START: "Boot",
+    win32service.SERVICE_DEMAND_START: "Manual",
+    win32service.SERVICE_DISABLED: "Disabled",
+    win32service.SERVICE_SYSTEM_START: "System",
+} if win32service else {}
+
+WIN32_STATUS_MAP = {
+    win32service.SERVICE_STOPPED: "Stopped",
+    win32service.SERVICE_START_PENDING: "Starting",
+    win32service.SERVICE_STOP_PENDING: "Stopping",
+    win32service.SERVICE_RUNNING: "Running",
+    win32service.SERVICE_CONTINUE_PENDING: "Continuing",
+    win32service.SERVICE_PAUSE_PENDING: "Pausing",
+    win32service.SERVICE_PAUSED: "Paused",
+} if win32service else {}
+
+SCRIPT_INTERPRETER_PATTERN = r"\.(bat|cmd|ps1|vbs|js)\b"
+
 
 @dataclass
 class ServiceInfo:
@@ -39,6 +60,7 @@ class ServiceInfo:
 
 
 def _path_under_system_prefixes(path_lower: str) -> bool:
+    """Check if path falls under known Windows system directories."""
     if not path_lower:
         return False
     for prefix in config.SYSTEM_SERVICE_PREFIXES:
@@ -51,13 +73,13 @@ def _extract_binary_path(path_name: str) -> str:
     """Normalize Win32_Service.PathName (handles quoted paths and arguments)."""
     if not path_name:
         return ""
-    pn = path_name.strip()
-    if pn.startswith('"'):
-        end = pn.find('"', 1)
+    normalized = path_name.strip()
+    if normalized.startswith('"'):
+        end = normalized.find('"', 1)
         if end != -1:
-            return pn[1:end]
-    parts = pn.split()
-    return parts[0] if parts else pn
+            return normalized[1:end]
+    parts = normalized.split()
+    return parts[0] if parts else normalized
 
 
 class ServiceAuditor:
@@ -81,167 +103,176 @@ class ServiceAuditor:
         return self.services
 
     def _enumerate_via_wmi(self) -> None:
+        """Enumerate services using WMI (primary method)."""
         conn = wmi_module.WMI()  # type: ignore[attr-defined]
-        for s in conn.Win32_Service():  # type: ignore[attr-defined]
-            name = str(s.Name)
-            display = str(s.DisplayName or "")
-            state = str(s.State or "Unknown")
-            start_mode = str(s.StartMode or "Unknown")
-            path_name = str(s.PathName or "")
-            binary = _extract_binary_path(path_name)
-            svc_type = getattr(s, "ServiceType", None)
+        for svc in conn.Win32_Service():  # type: ignore[attr-defined]
+            name = str(svc.Name)
+            display_name = str(svc.DisplayName or "")
+            status = str(svc.State or "Unknown")
+            start_type = str(svc.StartMode or "Unknown")
+            path_name = str(svc.PathName or "")
+            exe_path = _extract_binary_path(path_name)
+            service_type = getattr(svc, "ServiceType", None)
+            
             self.services[name] = ServiceInfo(
                 name=name,
-                display_name=display,
-                status=state,
-                start_type=start_mode,
-                exe_path=binary or path_name,
-                service_type=svc_type,
+                display_name=display_name,
+                status=status,
+                start_type=start_type,
+                exe_path=exe_path or path_name,
+                service_type=service_type,
             )
 
     def _enumerate_via_scm(self) -> None:
+        """Enumerate services using SCM APIs (fallback method)."""
         if win32service is None:
             logger.error("pywin32 not available; cannot enumerate services.")
             return
+        
         hscm = win32service.OpenSCManager(None, None, win32service.SC_MANAGER_ENUMERATE_SERVICE)
         try:
             services = win32service.EnumServicesStatus(
                 hscm, win32service.SERVICE_WIN32, win32service.SERVICE_STATE_ALL
             )
-            start_type_map = {
-                win32service.SERVICE_AUTO_START: "Auto",
-                win32service.SERVICE_BOOT_START: "Boot",
-                win32service.SERVICE_DEMAND_START: "Manual",
-                win32service.SERVICE_DISABLED: "Disabled",
-                win32service.SERVICE_SYSTEM_START: "System",
-            }
-            status_map = {
-                win32service.SERVICE_STOPPED: "Stopped",
-                win32service.SERVICE_START_PENDING: "Starting",
-                win32service.SERVICE_STOP_PENDING: "Stopping",
-                win32service.SERVICE_RUNNING: "Running",
-                win32service.SERVICE_CONTINUE_PENDING: "Continuing",
-                win32service.SERVICE_PAUSE_PENDING: "Pausing",
-                win32service.SERVICE_PAUSED: "Paused",
-            }
-            for service in services:
-                service_name = service[0]
-                display_name = service[1]
-                service_status = service[2]
-                try:
-                    hs = win32service.OpenService(hscm, service_name, win32service.SERVICE_QUERY_CONFIG)
-                    try:
-                        cfg = win32service.QueryServiceConfig(hs)
-                        exe_path = cfg[3]
-                    finally:
-                        win32service.CloseServiceHandle(hs)
-                    self.services[service_name] = ServiceInfo(
-                        name=service_name,
-                        display_name=display_name,
-                        status=status_map.get(service_status[1], "Unknown"),
-                        start_type=start_type_map.get(cfg[1], "Unknown"),
-                        exe_path=exe_path,
-                        service_type=cfg[0],
-                    )
-                except Exception:
-                    continue
+            for service_tuple in services:
+                self._process_scm_service(service_tuple, hscm)
         finally:
             win32service.CloseServiceHandle(hscm)
 
-    def detect_suspicious_services(self) -> List[Dict[str, Any]]:
-        """Suspicious paths, non-system auto-start binaries, and kernel/driver oddities (light)."""
-        anomalies: List[Dict[str, Any]] = []
-        for service_name, info in self.services.items():
-            exe_path = info.exe_path or ""
-            exe_lower = exe_path.lower()
+    def _process_scm_service(self, service_tuple: tuple, hscm: Any) -> None:
+        """Process a single service from SCM enumeration."""
+        name = service_tuple[0]
+        display_name = service_tuple[1]
+        service_status_code = service_tuple[2][1]
+        
+        try:
+            service_handle = win32service.OpenService(
+                hscm, name, win32service.SERVICE_QUERY_CONFIG
+            )
+            try:
+                config_tuple = win32service.QueryServiceConfig(service_handle)
+                exe_path = config_tuple[3]
+                service_type = config_tuple[0]
+                start_type_code = config_tuple[1]
+            finally:
+                win32service.CloseServiceHandle(service_handle)
+            
+            self.services[name] = ServiceInfo(
+                name=name,
+                display_name=display_name,
+                status=WIN32_STATUS_MAP.get(service_status_code, "Unknown"),
+                start_type=WIN32_START_TYPE_MAP.get(start_type_code, "Unknown"),
+                exe_path=exe_path,
+                service_type=service_type,
+            )
+        except Exception:
+            pass
 
+    def _create_service_alert(
+        self,
+        alert_type: str,
+        severity: str,
+        service_info: ServiceInfo,
+        reason: str,
+        description: str,
+    ) -> Dict[str, Any]:
+        """Create a structured service anomaly alert."""
+        return {
+            "type": alert_type,
+            "severity": severity,
+            "risk_score": config.RISK_SCORES.get(severity, 50),
+            "timestamp": datetime.now(),
+            "service_name": service_info.name,
+            "display_name": service_info.display_name,
+            "path": service_info.exe_path,
+            "status": service_info.status,
+            "start_type": service_info.start_type,
+            "reason": reason,
+            "description": description,
+        }
+
+    def detect_suspicious_services(self) -> List[Dict[str, Any]]:
+        """Suspicious paths, non-system auto-start binaries, and script hosting."""
+        anomalies: List[Dict[str, Any]] = []
+        
+        for service_info in self.services.values():
+            exe_path_lower = (service_info.exe_path or "").lower()
+            
+            # Check for suspicious path fragments
             for fragment in config.SUSPICIOUS_PATH_FRAGMENTS:
-                if fragment.lower() in exe_lower:
+                if fragment.lower() in exe_path_lower:
                     anomalies.append(
-                        {
-                            "type": "Service from Suspicious Location",
-                            "severity": config.SEVERITY_HIGH,
-                            "risk_score": config.RISK_SCORES.get(config.SEVERITY_HIGH, 75),
-                            "timestamp": datetime.now(),
-                            "service_name": service_name,
-                            "display_name": info.display_name,
-                            "path": info.exe_path,
-                            "status": info.status,
-                            "start_type": info.start_type,
-                            "reason": f"Service binary path contains: {fragment}",
-                            "description": f"Service executable references suspicious location: {exe_path}",
-                        }
+                        self._create_service_alert(
+                            "Service from Suspicious Location",
+                            config.SEVERITY_HIGH,
+                            service_info,
+                            f"Service binary path contains: {fragment}",
+                            f"Service executable references suspicious location: {service_info.exe_path}",
+                        )
                     )
                     break
-
-            auto_like = info.start_type in ("Auto", "Boot", "System")
-            if auto_like and info.status == "Running":
-                if service_name.lower() not in config.LEGITIMATE_SERVICES:
-                    if not _path_under_system_prefixes(exe_lower):
-                        anomalies.append(
-                            {
-                                "type": "Auto-Start Service Outside System Directories",
-                                "severity": config.SEVERITY_MEDIUM,
-                                "risk_score": config.RISK_SCORES.get(config.SEVERITY_MEDIUM, 50),
-                                "timestamp": datetime.now(),
-                                "service_name": service_name,
-                                "display_name": info.display_name,
-                                "path": info.exe_path,
-                                "status": info.status,
-                                "start_type": info.start_type,
-                                "reason": "Running auto-start service with binary outside typical Windows paths.",
-                                "description": f"Review legitimacy of auto-start service {service_name}.",
-                            }
-                        )
-
-            if exe_path and re.search(r"\.(bat|cmd|ps1|vbs|js)\b", exe_lower):
+            
+            # Check for auto-start services outside system directories
+            is_auto_start = service_info.start_type in ("Auto", "Boot", "System")
+            is_running = service_info.status == "Running"
+            is_legitimate = service_info.name.lower() in config.LEGITIMATE_SERVICES
+            is_system_path = _path_under_system_prefixes(exe_path_lower)
+            
+            if is_auto_start and is_running and not is_legitimate and not is_system_path:
                 anomalies.append(
-                    {
-                        "type": "Service Hosting Script Interpreter",
-                        "severity": config.SEVERITY_HIGH,
-                        "risk_score": config.RISK_SCORES.get(config.SEVERITY_HIGH, 75),
-                        "timestamp": datetime.now(),
-                        "service_name": service_name,
-                        "display_name": info.display_name,
-                        "path": info.exe_path,
-                        "status": info.status,
-                        "start_type": info.start_type,
-                        "reason": "Service points to a script file — uncommon for built-in services.",
-                        "description": "Persistence often abuses script-based service binaries.",
-                    }
+                    self._create_service_alert(
+                        "Auto-Start Service Outside System Directories",
+                        config.SEVERITY_MEDIUM,
+                        service_info,
+                        "Running auto-start service with binary outside typical Windows paths.",
+                        f"Review legitimacy of auto-start service {service_info.name}.",
+                    )
                 )
-
+            
+            # Check for script interpreter hosting
+            if service_info.exe_path and re.search(SCRIPT_INTERPRETER_PATTERN, exe_path_lower):
+                anomalies.append(
+                    self._create_service_alert(
+                        "Service Hosting Script Interpreter",
+                        config.SEVERITY_HIGH,
+                        service_info,
+                        "Service points to a script file — uncommon for built-in services.",
+                        "Persistence often abuses script-based service binaries.",
+                    )
+                )
+        
         self.anomalies.extend(anomalies)
         return anomalies
 
     def detect_new_services(self, baseline_services: Iterable[str]) -> List[Dict[str, Any]]:
-        """Services present now but absent from baseline name set."""
+        """Detect services present now but absent from baseline."""
         baseline_set = set(baseline_services)
-        new_services: List[Dict[str, Any]] = []
+        new_anomalies: List[Dict[str, Any]] = []
+        
         for service_name in set(self.services.keys()) - baseline_set:
-            info = self.services[service_name]
-            new_services.append(
-                {
-                    "type": "Newly Added Service",
-                    "severity": config.SEVERITY_MEDIUM,
-                    "risk_score": config.RISK_SCORES.get(config.SEVERITY_MEDIUM, 50),
-                    "timestamp": datetime.now(),
-                    "service_name": service_name,
-                    "display_name": info.display_name,
-                    "path": info.exe_path,
-                    "status": info.status,
-                    "start_type": info.start_type,
-                    "reason": "Service name not present in stored baseline snapshot.",
-                    "description": f"New service detected compared to baseline: {service_name}",
-                }
+            service_info = self.services[service_name]
+            new_anomalies.append(
+                self._create_service_alert(
+                    "Newly Added Service",
+                    config.SEVERITY_MEDIUM,
+                    service_info,
+                    "Service name not present in stored baseline snapshot.",
+                    f"New service detected compared to baseline: {service_name}",
+                )
             )
-        self.anomalies.extend(new_services)
-        return new_services
+        
+        self.anomalies.extend(new_anomalies)
+        return new_anomalies
 
     def get_startup_services(self) -> List[ServiceInfo]:
-        return [s for s in self.services.values() if s.start_type in ("Auto", "Boot", "System")]
+        """Return all auto/boot/system startup services."""
+        return [
+            s for s in self.services.values()
+            if s.start_type in ("Auto", "Boot", "System")
+        ]
 
     def get_all_anomalies(self) -> List[Dict[str, Any]]:
+        """Return all collected anomalies."""
         return list(self.anomalies)
 
 

@@ -35,12 +35,34 @@ init(autoreset=True)
 
 logger = logging.getLogger(__name__)
 
+BANNER_WIDTH = 100
+
 
 def _is_elevated() -> bool:
+    """Check if running with administrator privileges (Windows)."""
     try:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())  # type: ignore[attr-defined]
     except Exception:
         return False
+
+
+def _print_status(message: str, level: str = "info") -> None:
+    """Print formatted status message with color and symbol."""
+    color_map = {
+        "info": Fore.YELLOW,
+        "success": Fore.GREEN,
+        "action": Fore.CYAN,
+        "debug": Fore.MAGENTA,
+    }
+    symbol_map = {
+        "info": "*",
+        "success": "✓",
+        "action": "+",
+        "debug": "+",
+    }
+    color = color_map.get(level, Fore.WHITE)
+    symbol = symbol_map.get(level, "•")
+    print(f"{color}[{symbol}] {message}{Style.RESET_ALL}")
 
 
 class MonitoringAgent:
@@ -54,19 +76,17 @@ class MonitoringAgent:
         self._seen_signatures: Optional[Set[Tuple[str, str]]] = None
 
     def print_banner(self) -> None:
+        """Print agent startup banner."""
         banner = f"""
-{Fore.CYAN}{'=' * 100}
+{Fore.CYAN}{'=' * BANNER_WIDTH}
     WINDOWS SERVICE & PROCESS MONITORING AGENT
     Blue-team oriented telemetry and heuristics
-{'=' * 100}{Style.RESET_ALL}
+{'=' * BANNER_WIDTH}{Style.RESET_ALL}
 """
         print(banner)
 
-    def _detect_new_process_signatures(self) -> None:
-        """
-        Emit informational alerts when a (name, image path) pair appears for the first time
-        in this agent session. Reduces PID churn noise while still surfacing new binaries.
-        """
+    def _track_new_process_signatures(self) -> None:
+        """Track and alert on new (name, path) process signatures seen during session."""
         current: Set[Tuple[str, str]] = set()
         for proc in self.process_analyzer.processes.values():
             current.add((proc.name.lower(), (proc.exe_path or "").lower()))
@@ -77,7 +97,6 @@ class MonitoringAgent:
 
         fresh = current - self._seen_signatures
         for name, path in sorted(fresh):
-            desc = f"New signature observed: {name} @ {path or 'N/A'}"
             pid_match = next(
                 (
                     pid
@@ -96,14 +115,88 @@ class MonitoringAgent:
                     "pid": pid_match,
                     "path": path or "N/A",
                     "reason": "First observation of this name/path pair during this session.",
-                    "description": desc,
+                    "description": f"New signature observed: {name} @ {path or 'N/A'}",
                 }
             )
 
         self._seen_signatures |= current
 
-    def run_single_scan(
+    def _run_process_analysis_stage(self) -> None:
+        """Execute process enumeration and detection heuristics."""
+        _print_status("Enumerating processes (psutil)...", "action")
+        processes = self.process_analyzer.enumerate_processes()
+        print(f"    Samples: {len(processes)}")
+
+        self._track_new_process_signatures()
+
+        _print_status("Building process tree...", "action")
+        tree = self.process_analyzer.build_process_tree()
+        print(f"    Parent nodes: {len(tree)}")
+
+        _print_status("Parent / child heuristics...", "action")
+        self.alert_manager.add_alerts(self.process_analyzer.detect_suspicious_relationships())
+
+        _print_status("Path / blacklist heuristics...", "action")
+        self.alert_manager.add_alerts(self.process_analyzer.detect_unauthorized_processes())
+
+        _print_status("Command-line heuristics...", "action")
+        self.alert_manager.add_alerts(self.process_analyzer.detect_suspicious_cmdlines())
+
+        _print_status("Injection / masquerading heuristics...", "action")
+        self.alert_manager.add_alerts(self.process_analyzer.detect_process_injection_signs())
+
+        _print_status("Orphan / duplicate heuristics...", "action")
+        self.alert_manager.add_alerts(self.process_analyzer.detect_orphan_processes())
+        self.alert_manager.add_alerts(self.process_analyzer.detect_duplicate_names())
+
+    def _run_service_auditing_stage(self, simulate: bool = False) -> None:
+        """Execute service enumeration and detection heuristics."""
+        _print_status("Enumerating services (WMI / SCM)...", "action")
+        services = self.service_auditor.enumerate_services()
+        print(f"    Services: {len(services)}")
+
+        _print_status("Auditing service configurations...", "action")
+        self.alert_manager.add_alerts(self.service_auditor.detect_suspicious_services())
+
+        if simulate:
+            _print_status("Appending simulated demonstration alerts...", "debug")
+            self.alert_manager.add_alerts(get_simulated_alerts())
+
+    def _generate_reports_and_exports(
         self,
+        export_csv: bool = False,
+        write_scan_json: bool = False,
+    ) -> Dict[str, Any]:
+        """Generate reports and optional exports."""
+        _print_status("Writing artifacts...", "info")
+        self.report_generator = ReportGenerator(
+            self.process_analyzer,
+            self.service_auditor,
+            self.alert_manager,
+        )
+
+        alert_file = self.alert_manager.save_alerts_to_file()
+        summary_report = self.report_generator.generate_summary_report()
+        detailed_report = self.report_generator.generate_detailed_report()
+
+        exports = []
+        if export_csv:
+            exports.append(self.report_generator.export_alerts_csv())
+        if write_scan_json:
+            exports.append(self.report_generator.write_scan_json())
+
+        for path in (summary_report, detailed_report, *exports):
+            print(f"{Fore.GREEN}✓ {path}{Style.RESET_ALL}")
+
+        return {
+            "alert_file": alert_file,
+            "summary_report": summary_report,
+            "detailed_report": detailed_report,
+            "extra_exports": exports,
+            "statistics": self.alert_manager.get_statistics(),
+        }
+
+    def run_single_scan(
         *,
         simulate: bool = False,
         export_csv: bool = False,
