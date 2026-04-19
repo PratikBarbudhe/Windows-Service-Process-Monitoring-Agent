@@ -42,7 +42,8 @@ def _is_elevated() -> bool:
     """Check if running with administrator privileges (Windows)."""
     try:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())  # type: ignore[attr-defined]
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Could not check elevation status: {e}")
         return False
 
 
@@ -53,16 +54,24 @@ def _print_status(message: str, level: str = "info") -> None:
         "success": Fore.GREEN,
         "action": Fore.CYAN,
         "debug": Fore.MAGENTA,
+        "warning": Fore.YELLOW,
+        "error": Fore.RED,
     }
     symbol_map = {
         "info": "*",
         "success": "✓",
         "action": "+",
         "debug": "+",
+        "warning": "!",
+        "error": "✗",
     }
     color = color_map.get(level, Fore.WHITE)
     symbol = symbol_map.get(level, "•")
     print(f"{color}[{symbol}] {message}{Style.RESET_ALL}")
+
+    # Also log to logger
+    log_method = getattr(logger, level, logger.info)
+    log_method(message)
 
 
 class MonitoringAgent:
@@ -74,6 +83,10 @@ class MonitoringAgent:
         self.service_auditor = ServiceAuditor()
         self.report_generator: Optional[ReportGenerator] = None
         self._seen_signatures: Optional[Set[Tuple[str, str]]] = None
+        self._scan_count = 0
+        self._last_scan_time: Optional[datetime] = None
+
+        logger.info("MonitoringAgent initialized")
 
     def print_banner(self) -> None:
         """Print agent startup banner."""
@@ -84,6 +97,7 @@ class MonitoringAgent:
 {'=' * BANNER_WIDTH}{Style.RESET_ALL}
 """
         print(banner)
+        logger.info("Agent banner displayed")
 
     def _track_new_process_signatures(self) -> None:
         """Track and alert on new (name, path) process signatures seen during session."""
@@ -197,86 +211,75 @@ class MonitoringAgent:
         }
 
     def run_single_scan(
+        self,
         *,
         simulate: bool = False,
         export_csv: bool = False,
         write_scan_json: bool = False,
     ) -> dict:
-        """Execute one full monitoring cycle."""
-        self.alert_manager.start_new_scan()
+        """Execute one full monitoring cycle with comprehensive error handling."""
+        scan_start = datetime.now()
+        self._scan_count += 1
 
-        self.process_analyzer = ProcessAnalyzer()
-        self.service_auditor = ServiceAuditor()
+        logger.info(f"Starting scan #{self._scan_count} at {scan_start}")
 
-        print(f"\n{Fore.YELLOW}[*] Monitoring scan @ {datetime.now():%Y-%m-%d %H:%M:%S}{Style.RESET_ALL}\n")
+        try:
+            self.alert_manager.start_new_scan()
 
-        print(f"{Fore.CYAN}[+] Enumerating processes (psutil)...{Style.RESET_ALL}")
-        processes = self.process_analyzer.enumerate_processes()
-        print(f"    Samples: {len(processes)}")
+            # Reinitialize analyzers for each scan to ensure fresh state
+            self.process_analyzer = ProcessAnalyzer()
+            self.service_auditor = ServiceAuditor()
 
-        self._detect_new_process_signatures()
+            _print_status(f"Monitoring scan #{self._scan_count} @ {scan_start:%Y-%m-%d %H:%M:%S}", "info")
 
-        print(f"{Fore.CYAN}[+] Building process tree...{Style.RESET_ALL}")
-        tree = self.process_analyzer.build_process_tree()
-        print(f"    Parent nodes: {len(tree)}")
+            # Process analysis phase
+            try:
+                self._run_process_analysis_stage()
+            except Exception as e:
+                logger.error(f"Process analysis failed: {e}", exc_info=True)
+                _print_status(f"Process analysis failed: {e}", "error")
+                raise
 
-        print(f"{Fore.CYAN}[+] Parent / child heuristics...{Style.RESET_ALL}")
-        self.alert_manager.add_alerts(self.process_analyzer.detect_suspicious_relationships())
+            # Service auditing phase
+            try:
+                self._run_service_auditing_stage()
+            except Exception as e:
+                logger.error(f"Service auditing failed: {e}", exc_info=True)
+                _print_status(f"Service auditing failed: {e}", "error")
+                raise
 
-        print(f"{Fore.CYAN}[+] Path / blacklist heuristics...{Style.RESET_ALL}")
-        self.alert_manager.add_alerts(self.process_analyzer.detect_unauthorized_processes())
+            # Simulation (if requested)
+            if simulate:
+                try:
+                    _print_status("Appending simulated demonstration alerts...", "debug")
+                    self.alert_manager.add_alerts(get_simulated_alerts())
+                    logger.info("Simulated alerts added")
+                except Exception as e:
+                    logger.warning(f"Failed to add simulated alerts: {e}")
 
-        print(f"{Fore.CYAN}[+] Command-line heuristics...{Style.RESET_ALL}")
-        self.alert_manager.add_alerts(self.process_analyzer.detect_suspicious_cmdlines())
+            # Reporting phase
+            try:
+                result = self._generate_reports_and_exports(
+                    export_csv=export_csv,
+                    write_scan_json=write_scan_json
+                )
+            except Exception as e:
+                logger.error(f"Report generation failed: {e}", exc_info=True)
+                _print_status(f"Report generation failed: {e}", "error")
+                raise
 
-        print(f"{Fore.CYAN}[+] Injection / masquerading heuristics...{Style.RESET_ALL}")
-        self.alert_manager.add_alerts(self.process_analyzer.detect_process_injection_signs())
+            scan_duration = (datetime.now() - scan_start).total_seconds()
+            logger.info(f"Scan #{self._scan_count} completed successfully in {scan_duration:.1f}s")
+            _print_status(f"Scan #{self._scan_count} completed in {scan_duration:.1f}s", "success")
 
-        print(f"{Fore.CYAN}[+] Orphan / duplicate heuristics...{Style.RESET_ALL}")
-        self.alert_manager.add_alerts(self.process_analyzer.detect_orphan_processes())
-        self.alert_manager.add_alerts(self.process_analyzer.detect_duplicate_names())
+            self._last_scan_time = datetime.now()
+            return result
 
-        print(f"{Fore.CYAN}[+] Enumerating services (WMI / SCM)...{Style.RESET_ALL}")
-        services = self.service_auditor.enumerate_services()
-        print(f"    Services: {len(services)}")
-
-        print(f"{Fore.CYAN}[+] Auditing service configurations...{Style.RESET_ALL}")
-        self.alert_manager.add_alerts(self.service_auditor.detect_suspicious_services())
-
-        if simulate:
-            print(f"{Fore.MAGENTA}[+] Appending simulated demonstration alerts...{Style.RESET_ALL}")
-            self.alert_manager.add_alerts(get_simulated_alerts())
-
-        print(f"\n{Fore.GREEN}[✓] Scan stage complete{Style.RESET_ALL}\n")
-        self.alert_manager.print_all_alerts()
-
-        self.report_generator = ReportGenerator(
-            self.process_analyzer,
-            self.service_auditor,
-            self.alert_manager,
-        )
-
-        print(f"{Fore.YELLOW}[*] Writing artifacts...{Style.RESET_ALL}")
-        alert_path = self.alert_manager.save_alerts_to_file()
-        summary_path = self.report_generator.generate_summary_report()
-        detailed_path = self.report_generator.generate_detailed_report()
-
-        extras = []
-        if export_csv:
-            extras.append(self.report_generator.export_alerts_csv())
-        if write_scan_json:
-            extras.append(self.report_generator.write_scan_json())
-
-        for p in (summary_path, detailed_path, *extras):
-            print(f"{Fore.GREEN}✓ {p}{Style.RESET_ALL}")
-
-        return {
-            "alert_file": alert_path,
-            "summary_report": summary_path,
-            "detailed_report": detailed_path,
-            "extra_exports": extras,
-            "statistics": self.alert_manager.get_statistics(),
-        }
+        except Exception as e:
+            scan_duration = (datetime.now() - scan_start).total_seconds()
+            logger.error(f"Scan #{self._scan_count} failed after {scan_duration:.1f}s: {e}", exc_info=True)
+            _print_status(f"Scan #{self._scan_count} failed: {e}", "error")
+            raise
 
     def create_baseline(self, filename: Optional[str] = None) -> str:
         if filename is None:
@@ -337,30 +340,60 @@ class MonitoringAgent:
         write_scan_json: bool = False,
         simulate: bool = False,
     ) -> None:
-        print(
-            f"\n{Fore.YELLOW}[*] Continuous monitoring (interval={interval}s, dedup=ON){Style.RESET_ALL}"
-        )
-        print(f"{Fore.YELLOW}[*] Ctrl+C to stop{Style.RESET_ALL}\n")
+        """Run continuous monitoring with proper error handling and recovery."""
+        logger.info(f"Starting continuous monitoring (interval={interval}s)")
 
-        scan_count = 0
+        _print_status(f"Continuous monitoring (interval={interval}s, dedup=ON)", "info")
+        _print_status("Ctrl+C to stop", "info")
+
+        consecutive_failures = 0
+        max_consecutive_failures = 5
 
         try:
             while True:
-                scan_count += 1
-                print(f"\n{Fore.MAGENTA}{'=' * 100}")
-                print(f"SCAN #{scan_count} — {datetime.now():%Y-%m-%d %H:%M:%S}")
-                print(f"{'=' * 100}{Style.RESET_ALL}\n")
+                try:
+                    # Print scan header
+                    print(f"\n{Fore.MAGENTA}{'=' * BANNER_WIDTH}")
+                    print(f"SCAN #{self._scan_count + 1} — {datetime.now():%Y-%m-%d %H:%M:%S}")
+                    print(f"{'=' * BANNER_WIDTH}{Style.RESET_ALL}\n")
 
-                self.run_single_scan(
-                    simulate=bool(simulate and scan_count == 1),
-                    export_csv=export_csv,
-                    write_scan_json=write_scan_json,
-                )
+                    # Run the scan
+                    self.run_single_scan(
+                        simulate=bool(simulate and self._scan_count == 0),  # Only simulate first scan
+                        export_csv=export_csv,
+                        write_scan_json=write_scan_json,
+                    )
 
-                print(f"\n{Fore.CYAN}[*] Sleeping {interval}s...{Style.RESET_ALL}")
-                time.sleep(interval)
+                    # Reset failure counter on success
+                    consecutive_failures = 0
+
+                    # Sleep until next scan
+                    logger.info(f"Sleeping {interval}s until next scan")
+                    _print_status(f"Sleeping {interval}s...", "info")
+                    time.sleep(interval)
+
+                except Exception as e:
+                    consecutive_failures += 1
+                    logger.error(f"Scan failed (attempt {consecutive_failures}/{max_consecutive_failures}): {e}")
+
+                    if consecutive_failures >= max_consecutive_failures:
+                        logger.error("Too many consecutive failures, stopping continuous monitoring")
+                        _print_status("Too many consecutive failures, stopping", "error")
+                        break
+
+                    # Exponential backoff for retries
+                    retry_delay = min(interval // 4, 30)  # Max 30 seconds
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    _print_status(f"Scan failed, retrying in {retry_delay}s...", "warning")
+                    time.sleep(retry_delay)
+
         except KeyboardInterrupt:
-            print(f"\n{Fore.YELLOW}[*] Stopped by user after {scan_count} scan(s){Style.RESET_ALL}")
+            logger.info(f"Continuous monitoring stopped by user after {self._scan_count} scan(s)")
+            _print_status(f"Stopped by user after {self._scan_count} scan(s)", "info")
+        except Exception as e:
+            logger.error(f"Unexpected error in continuous monitoring: {e}", exc_info=True)
+            _print_status(f"Unexpected error: {e}", "error")
+            raise
 
 
 def _configure_logging(verbose: bool) -> None:
