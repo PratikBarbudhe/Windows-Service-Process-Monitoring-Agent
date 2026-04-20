@@ -6,6 +6,9 @@ Examples:
     python monitor_agent.py --continuous --interval 120
     python monitor_agent.py --baseline
     python monitor_agent.py --compare logs/service_baseline_....json
+    python monitor_agent.py --process-baseline
+    python monitor_agent.py --compare-processes logs/process_baseline_....json
+    python monitor_agent.py --train-ml
     python monitor_agent.py --simulate --csv
     streamlit run dashboard_streamlit.py
 """
@@ -162,6 +165,12 @@ class MonitoringAgent:
         _print_status("Orphan / duplicate heuristics...", "action")
         self.alert_manager.add_alerts(self.process_analyzer.detect_orphan_processes())
         self.alert_manager.add_alerts(self.process_analyzer.detect_duplicate_names())
+
+        _print_status("Behavioral anomaly detection...", "action")
+        self.alert_manager.add_alerts(self.process_analyzer.detect_behavioral_anomalies())
+
+        _print_status("Unknown process detection...", "action")
+        self.alert_manager.add_alerts(self.process_analyzer.detect_unknown_processes())
 
     def _run_service_auditing_stage(self, simulate: bool = False) -> None:
         """Execute service enumeration and detection heuristics."""
@@ -332,6 +341,78 @@ class MonitoringAgent:
         else:
             print(f"\n{Fore.GREEN}✓ No new services vs baseline{Style.RESET_ALL}")
 
+    def create_process_baseline(self, filename: Optional[str] = None) -> str:
+        """Create and save process baseline for ML training and unknown process detection."""
+        if filename is None:
+            filename = f"process_baseline_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+
+        print(f"\n{Fore.YELLOW}[*] Creating process baseline...{Style.RESET_ALL}")
+
+        # Initialize process analyzer and enumerate
+        self.process_analyzer = ProcessAnalyzer()
+        processes = self.process_analyzer.enumerate_processes()
+
+        filepath = self.process_analyzer.save_process_baseline(filename)
+
+        print(f"{Fore.GREEN}✓ Process baseline saved: {filepath}{Style.RESET_ALL}")
+        print(f"  Processes captured: {len(processes)}")
+        return filepath
+
+    def compare_processes_with_baseline(self, baseline_file: str) -> None:
+        """Compare current processes against baseline."""
+        print(f"\n{Fore.YELLOW}[*] Comparing processes to baseline: {baseline_file}{Style.RESET_ALL}")
+
+        # Load baseline
+        if not self.process_analyzer.load_process_baseline(baseline_file):
+            print(f"{Fore.RED}[!] Could not load process baseline: {baseline_file}{Style.RESET_ALL}")
+            return
+
+        # Enumerate current processes
+        self.process_analyzer = ProcessAnalyzer()
+        processes = self.process_analyzer.enumerate_processes()
+
+        # Detect unknown processes
+        unknown_alerts = self.process_analyzer.detect_unknown_processes()
+
+        print(f"\n{Fore.CYAN}[+] Results{Style.RESET_ALL}")
+        print(f"  Current processes: {len(processes)}")
+        print(f"  Unknown processes: {len(unknown_alerts)}")
+
+        if unknown_alerts:
+            for alert in unknown_alerts:
+                print(f"  - {alert.get('process_name')}: {alert.get('path')}")
+            self.alert_manager.add_alerts(unknown_alerts)
+            self.alert_manager.print_all_alerts()
+            self.alert_manager.save_alerts_to_file()
+        else:
+            print(f"\n{Fore.GREEN}✓ No unknown processes vs baseline{Style.RESET_ALL}")
+
+    def train_ml_model(self) -> bool:
+        """Train ML model for anomaly detection."""
+        print(f"\n{Fore.YELLOW}[*] Training ML model for anomaly detection...{Style.RESET_ALL}")
+
+        # Initialize process analyzer and collect training data
+        self.process_analyzer = ProcessAnalyzer()
+        self.process_analyzer.enable_baseline_mode(True)
+
+        # Run multiple scans to collect training data
+        print("  Collecting training data over multiple scans...")
+        for i in range(5):  # Collect data over 5 scans
+            print(f"    Scan {i+1}/5...")
+            processes = self.process_analyzer.enumerate_processes()
+            self.process_analyzer.behavior_analyzer.collect_training_data()
+            time.sleep(2)  # Brief pause between scans
+
+        # Train the model
+        success = self.process_analyzer.train_ml_model()
+
+        if success:
+            print(f"{Fore.GREEN}✓ ML model trained successfully{Style.RESET_ALL}")
+            return True
+        else:
+            print(f"{Fore.RED}[!] ML model training failed{Style.RESET_ALL}")
+            return False
+
     def run_continuous_monitoring(
         self,
         interval: int = 60,
@@ -438,6 +519,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--interval", type=int, default=60, help="Seconds between scans")
     p.add_argument("--baseline", action="store_true", help="Write service baseline JSON")
     p.add_argument("--compare", metavar="FILE", help="Compare live services to baseline JSON")
+    p.add_argument("--process-baseline", action="store_true", help="Write process baseline JSON for ML training")
+    p.add_argument("--compare-processes", metavar="FILE", help="Compare live processes to baseline JSON")
+    p.add_argument("--train-ml", action="store_true", help="Train ML model for anomaly detection")
     p.add_argument("--simulate", action="store_true", help="Append demo alerts for walkthroughs")
     p.add_argument("--csv", action="store_true", help="Export alerts CSV under reports/")
     p.add_argument("--scan-json", action="store_true", help="Write combined scan JSON under logs/")
@@ -477,6 +561,12 @@ def main() -> None:
         agent.create_baseline()
     elif args.compare:
         agent.compare_with_baseline(args.compare)
+    elif args.process_baseline:
+        agent.create_process_baseline()
+    elif args.compare_processes:
+        agent.compare_processes_with_baseline(args.compare_processes)
+    elif args.train_ml:
+        agent.train_ml_model()
     elif args.continuous:
         MonitoringAgent(dedup_alerts=True).run_continuous_monitoring(
             args.interval,

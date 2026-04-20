@@ -174,4 +174,13 @@ RISK_SCORES: Dict[str, int] = {
     SEVERITY_INFO: 10,
 }
 
+# --- ML and Anomaly Detection Configuration ---
+ML_MODEL_CONTAMINATION = 0.1  # Expected proportion of anomalies in training data
+ML_MODEL_RANDOM_STATE = 42
+CPU_SPIKE_THRESHOLD_SIGMA = 3.0  # Standard deviations above baseline for CPU spike
+MEMORY_LEAK_THRESHOLD_SIGMA = 2.0  # Standard deviations for memory leak detection
+MIN_BASELINE_SAMPLES = 10  # Minimum samples needed to establish baseline
+BEHAVIOR_HISTORY_LENGTH = 100  # Maximum historical measurements to keep per process
+METRIC_CLEANUP_AGE_HOURS = 24  # Age threshold for cleaning up old metrics
+
 

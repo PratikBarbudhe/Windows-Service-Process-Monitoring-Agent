@@ -14,8 +14,18 @@ from typing import Any, Dict, List, Optional, Tuple
 import psutil
 
 import config
+from anomaly_detector import BehaviorAnalyzer
 
 logger = logging.getLogger(__name__)
+
+COMMON_SAFE_PROCESSES = {"system", "registry", "idle", "secure system"}
+COMMON_MULTI_INSTANCE_WHITELIST = {"svchost.exe", "dllhost.exe", "conhost.exe"}
+TEMP_PATH_INDICATORS = (
+    "\\temp\\",
+    "\\tmp\\",
+    "appdata\\local\\temp",
+    "downloads\\",
+)
 
 COMMON_SAFE_PROCESSES = {"system", "registry", "idle", "secure system"}
 COMMON_MULTI_INSTANCE_WHITELIST = {"svchost.exe", "dllhost.exe", "conhost.exe"}
@@ -66,6 +76,7 @@ class ProcessAnalyzer:
         self.processes: Dict[int, ProcessInfo] = {}
         self.process_tree: Dict[int, List[int]] = {}
         self.anomalies: List[Dict[str, Any]] = []
+        self.behavior_analyzer = BehaviorAnalyzer()
 
     def enumerate_processes(self) -> Dict[int, ProcessInfo]:
         """Build ``self.processes`` in a single pass with cached parent names."""
@@ -81,6 +92,8 @@ class ProcessAnalyzer:
             "username",
             "create_time",
             "memory_info",
+            "cpu_percent",
+            "num_threads",
         ]
         for proc in psutil.process_iter(attrs):
             try:
@@ -94,7 +107,18 @@ class ProcessAnalyzer:
 
         for pid, pinfo in raw.items():
             try:
-                self.processes[pid] = self._build_process_info(pid, pinfo, raw)
+                proc_info = self._build_process_info(pid, pinfo, raw)
+                self.processes[pid] = proc_info
+
+                # Update behavior analyzer with current metrics
+                cpu_percent = float(pinfo.get("cpu_percent") or 0.0)
+                thread_count = int(pinfo.get("num_threads") or 0)
+                memory_rss = proc_info.memory_rss_bytes
+
+                self.behavior_analyzer.update_process_metrics(
+                    pid, proc_info.name, cpu_percent, memory_rss, thread_count
+                )
+
             except Exception as exc:  # noqa: BLE001 — best-effort enumeration
                 logger.debug("Skipping PID %s: %s", pid, exc)
 
@@ -488,6 +512,40 @@ class ProcessAnalyzer:
             current = proc.ppid if proc.ppid else None
             depth += 1
         return chain
+
+    def detect_behavioral_anomalies(self) -> List[Dict[str, Any]]:
+        """Detect behavioral anomalies using historical analysis and ML."""
+        anomalies = self.behavior_analyzer.detect_anomalies()
+        self.anomalies.extend(anomalies)
+        return anomalies
+
+    def detect_unknown_processes(self) -> List[Dict[str, Any]]:
+        """Detect processes not present in baseline."""
+        anomalies = self.behavior_analyzer.detect_unknown_processes(self.processes)
+        self.anomalies.extend(anomalies)
+        return anomalies
+
+    def load_process_baseline(self, baseline_file: str) -> bool:
+        """Load process baseline for unknown process detection."""
+        return self.behavior_analyzer.ml_detector.load_baseline(baseline_file)
+
+    def save_process_baseline(self, filename: str) -> str:
+        """Save current process signatures as baseline."""
+        return self.behavior_analyzer.ml_detector.save_baseline(self.processes, filename)
+
+    def train_ml_model(self) -> bool:
+        """Train ML model for anomaly detection."""
+        # Collect training data from current behavior
+        self.behavior_analyzer.collect_training_data()
+        return self.behavior_analyzer.train_ml_model()
+
+    def enable_baseline_mode(self, enabled: bool = True):
+        """Enable/disable baseline collection mode."""
+        self.behavior_analyzer.is_baseline_mode = enabled
+
+    def cleanup_behavior_metrics(self):
+        """Clean up old behavior metrics."""
+        self.behavior_analyzer.cleanup_old_metrics()
 
     def get_all_anomalies(self) -> List[Dict[str, Any]]:
         return list(self.anomalies)
