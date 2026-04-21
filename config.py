@@ -183,4 +183,90 @@ MIN_BASELINE_SAMPLES = 10  # Minimum samples needed to establish baseline
 BEHAVIOR_HISTORY_LENGTH = 100  # Maximum historical measurements to keep per process
 METRIC_CLEANUP_AGE_HOURS = 24  # Age threshold for cleaning up old metrics
 
+# --- Notification and Alert Configuration ---
+# Desktop Notifications
+NOTIFICATIONS_ENABLED = os.environ.get("WSPMA_NOTIFICATIONS_ENABLED", "true").lower() == "true"
+NOTIFICATION_TOAST_DURATION = 10  # Duration in seconds for desktop notifications
 
+# Minimum severity levels for notifications
+NOTIFICATION_SEVERITY_THRESHOLD = os.environ.get("WSPMA_NOTIFICATION_SEVERITY", SEVERITY_HIGH)
+DESKTOP_NOTIFICATION_ENABLED = True  # Enable Windows 10 Toast notifications
+DESKTOP_NOTIFICATION_ICON = None  # Optional: path to custom icon
+
+# Email Notifications
+EMAIL_NOTIFICATIONS_ENABLED = os.environ.get("WSPMA_EMAIL_ENABLED", "false").lower() == "true"
+EMAIL_SMTP_SERVER = os.environ.get("WSPMA_SMTP_SERVER", "smtp.gmail.com")
+EMAIL_SMTP_PORT = int(os.environ.get("WSPMA_SMTP_PORT", "587"))
+EMAIL_SENDER = os.environ.get("WSPMA_EMAIL_SENDER", "")
+EMAIL_SENDER_PASSWORD = os.environ.get("WSPMA_EMAIL_PASSWORD", "")
+EMAIL_RECIPIENTS = tuple(
+    os.environ.get("WSPMA_EMAIL_RECIPIENTS", "").split(",") 
+    if os.environ.get("WSPMA_EMAIL_RECIPIENTS", "") else ()
+)
+EMAIL_USE_TLS = os.environ.get("WSPMA_EMAIL_USE_TLS", "true").lower() == "true"
+
+# Minimum severity levels for email alerts
+EMAIL_ALERT_SEVERITY_THRESHOLD = os.environ.get("WSPMA_EMAIL_SEVERITY", SEVERITY_HIGH)
+EMAIL_BATCH_ALERTS = os.environ.get("WSPMA_EMAIL_BATCH", "true").lower() == "true"
+EMAIL_BATCH_INTERVAL_SECONDS = int(os.environ.get("WSPMA_EMAIL_BATCH_INTERVAL", "300"))
+
+# Alert Trigger Configuration
+# System resource thresholds (for triggering alerts)
+CPU_THRESHOLD_PERCENT = float(os.environ.get("WSPMA_CPU_THRESHOLD", "80.0"))  # CPU usage threshold
+MEMORY_THRESHOLD_PERCENT = float(os.environ.get("WSPMA_MEMORY_THRESHOLD", "85.0"))  # Memory usage threshold
+DISK_THRESHOLD_PERCENT = float(os.environ.get("WSPMA_DISK_THRESHOLD", "90.0"))  # Disk usage threshold
+
+# Alert Trigger Types (which alerts trigger notifications)
+ALERT_TRIGGER_SUSPICIOUS_PROCESS = os.environ.get("WSPMA_ALERT_SUSPICIOUS_PROCESS", "true").lower() == "true"
+ALERT_TRIGGER_SYSTEM_THRESHOLD = os.environ.get("WSPMA_ALERT_SYSTEM_THRESHOLD", "true").lower() == "true"
+ALERT_TRIGGER_INJECTION_DETECTED = os.environ.get("WSPMA_ALERT_INJECTION", "true").lower() == "true"
+ALERT_TRIGGER_UNUSUAL_SERVICE = os.environ.get("WSPMA_ALERT_UNUSUAL_SERVICE", "true").lower() == "true"
+
+# Notification Rate Limiting (prevent alert storms)
+RATE_LIMIT_ENABLED = os.environ.get("WSPMA_RATE_LIMIT", "true").lower() == "true"
+RATE_LIMIT_SECONDS = int(os.environ.get("WSPMA_RATE_LIMIT_SECONDS", "60"))  # Minimum seconds between same alert type
+
+
+
+# --- Notification and Alert Configuration ---
+# Desktop Notifications
+NOTIFICATIONS_ENABLED = os.environ.get("WSPMA_NOTIFICATIONS_ENABLED", "true").lower() == "true"
+NOTIFICATION_TOAST_DURATION = 10  # Duration in seconds for desktop notifications
+
+# Minimum severity levels for notifications
+NOTIFICATION_SEVERITY_THRESHOLD = os.environ.get("WSPMA_NOTIFICATION_SEVERITY", SEVERITY_HIGH)
+DESKTOP_NOTIFICATION_ENABLED = True  # Enable Windows 10 Toast notifications
+DESKTOP_NOTIFICATION_ICON = None  # Optional: path to custom icon
+
+# Email Notifications
+EMAIL_NOTIFICATIONS_ENABLED = os.environ.get("WSPMA_EMAIL_ENABLED", "false").lower() == "true"
+EMAIL_SMTP_SERVER = os.environ.get("WSPMA_SMTP_SERVER", "smtp.gmail.com")
+EMAIL_SMTP_PORT = int(os.environ.get("WSPMA_SMTP_PORT", "587"))
+EMAIL_SENDER = os.environ.get("WSPMA_EMAIL_SENDER", "")
+EMAIL_SENDER_PASSWORD = os.environ.get("WSPMA_EMAIL_PASSWORD", "")
+EMAIL_RECIPIENTS = tuple(
+    os.environ.get("WSPMA_EMAIL_RECIPIENTS", "").split(",") 
+    if os.environ.get("WSPMA_EMAIL_RECIPIENTS", "") else ()
+)
+EMAIL_USE_TLS = os.environ.get("WSPMA_EMAIL_USE_TLS", "true").lower() == "true"
+
+# Minimum severity levels for email alerts
+EMAIL_ALERT_SEVERITY_THRESHOLD = os.environ.get("WSPMA_EMAIL_SEVERITY", SEVERITY_HIGH)
+EMAIL_BATCH_ALERTS = os.environ.get("WSPMA_EMAIL_BATCH", "true").lower() == "true"
+EMAIL_BATCH_INTERVAL_SECONDS = int(os.environ.get("WSPMA_EMAIL_BATCH_INTERVAL", "300"))
+
+# Alert Trigger Configuration
+# System resource thresholds (for triggering alerts)
+CPU_THRESHOLD_PERCENT = float(os.environ.get("WSPMA_CPU_THRESHOLD", "80.0"))  # CPU usage threshold
+MEMORY_THRESHOLD_PERCENT = float(os.environ.get("WSPMA_MEMORY_THRESHOLD", "85.0"))  # Memory usage threshold
+DISK_THRESHOLD_PERCENT = float(os.environ.get("WSPMA_DISK_THRESHOLD", "90.0"))  # Disk usage threshold
+
+# Alert Trigger Types (which alerts trigger notifications)
+ALERT_TRIGGER_SUSPICIOUS_PROCESS = os.environ.get("WSPMA_ALERT_SUSPICIOUS_PROCESS", "true").lower() == "true"
+ALERT_TRIGGER_SYSTEM_THRESHOLD = os.environ.get("WSPMA_ALERT_SYSTEM_THRESHOLD", "true").lower() == "true"
+ALERT_TRIGGER_INJECTION_DETECTED = os.environ.get("WSPMA_ALERT_INJECTION", "true").lower() == "true"
+ALERT_TRIGGER_UNUSUAL_SERVICE = os.environ.get("WSPMA_ALERT_UNUSUAL_SERVICE", "true").lower() == "true"
+
+# Notification Rate Limiting (prevent alert storms)
+RATE_LIMIT_ENABLED = os.environ.get("WSPMA_RATE_LIMIT", "true").lower() == "true"
+RATE_LIMIT_SECONDS = int(os.environ.get("WSPMA_RATE_LIMIT_SECONDS", "60"))  # Minimum seconds between same alert type
