@@ -10,3 +10,7 @@ numpy>=1.24.0
 
 # Windows Service dependencies
 pywin32[services]>=305
+
+# Notification and Alert dependencies
+win10toast>=0.9
+

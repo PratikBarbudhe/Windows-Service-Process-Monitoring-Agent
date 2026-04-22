@@ -36,6 +36,7 @@ if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 from monitor_agent import MonitoringAgent
+from notification_handler import NotificationHandler
 
 
 class WindowsServiceProcessMonitor(win32serviceutil.ServiceFramework):
@@ -60,6 +61,7 @@ class WindowsServiceProcessMonitor(win32serviceutil.ServiceFramework):
 
         # Monitoring components
         self.monitoring_agent: Optional[MonitoringAgent] = None
+        self.notification_handler: Optional[NotificationHandler] = None
         self.monitoring_thread: Optional[threading.Thread] = None
         self.stop_event = threading.Event()
 
@@ -114,6 +116,11 @@ class WindowsServiceProcessMonitor(win32serviceutil.ServiceFramework):
         self.logger.info("Service stop requested")
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
 
+        # Flush any pending batched alerts before stopping
+        if self.notification_handler and self.notification_handler._batched_alerts:
+            self.logger.info(f"Flushing {len(self.notification_handler._batched_alerts)} pending alerts before stop...")
+            self.notification_handler.flush_batched_alerts()
+
         # Signal monitoring thread to stop
         self.stop_event.set()
         self.is_alive = False
@@ -158,11 +165,22 @@ class WindowsServiceProcessMonitor(win32serviceutil.ServiceFramework):
             raise
 
     def _initialize_monitoring(self) -> None:
-        """Initialize the monitoring agent with error handling."""
+        """Initialize the monitoring agent and notification handler with error handling."""
         try:
             self.logger.info("Initializing monitoring agent...")
             self.monitoring_agent = MonitoringAgent(dedup_alerts=True)
             self.logger.info("Monitoring agent initialized successfully")
+            
+            # Initialize notification handler
+            try:
+                self.logger.info("Initializing notification handler...")
+                self.notification_handler = NotificationHandler()
+                stats = self.notification_handler.get_notification_stats()
+                self.logger.info(f"Notification handler initialized: {stats}")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize notification handler: {e}")
+                self.notification_handler = None
+                
         except Exception as e:
             self.logger.error(f"Failed to initialize monitoring agent: {e}", exc_info=True)
             raise
@@ -218,7 +236,7 @@ class WindowsServiceProcessMonitor(win32serviceutil.ServiceFramework):
         self.logger.info("Monitoring loop stopped")
 
     def _perform_scan(self) -> None:
-        """Perform a single monitoring scan with comprehensive error handling."""
+        """Perform a single monitoring scan with comprehensive error handling and notifications."""
         if not self.monitoring_agent:
             raise RuntimeError("Monitoring agent not initialized")
 
@@ -232,18 +250,36 @@ class WindowsServiceProcessMonitor(win32serviceutil.ServiceFramework):
             # Check for alerts and log summary
             alerts = self.monitoring_agent.alert_manager.get_all_alerts()
             if alerts:
-                critical_count = sum(1 for a in alerts if a.get('severity') == 'critical')
-                high_count = sum(1 for a in alerts if a.get('severity') == 'high')
-                medium_count = sum(1 for a in alerts if a.get('severity') == 'medium')
+                critical_count = sum(1 for a in alerts if a.get('severity') == 'CRITICAL')
+                high_count = sum(1 for a in alerts if a.get('severity') == 'HIGH')
+                medium_count = sum(1 for a in alerts if a.get('severity') == 'MEDIUM')
 
                 self.logger.info(f"Scan completed: {len(alerts)} alerts "
                                f"(Critical: {critical_count}, High: {high_count}, Medium: {medium_count})")
 
+                # Send notifications for alerts
+                if self.notification_handler:
+                    notifications_sent = 0
+                    for alert in alerts:
+                        if self.notification_handler.handle_alert(alert):
+                            notifications_sent += 1
+                    
+                    if notifications_sent > 0:
+                        self.logger.info(f"Sent {notifications_sent} notifications")
+                
                 # Log critical/high alerts
                 for alert in alerts:
-                    if alert.get('severity') in ['critical', 'high']:
+                    if alert.get('severity') in ['CRITICAL', 'HIGH']:
                         self.logger.warning(f"ALERT {alert.get('severity', '').upper()}: "
                                           f"{alert.get('type', 'Unknown')} - {alert.get('description', '')}")
+                
+                # Flush batched alerts if needed
+                if self.notification_handler and self.notification_handler.should_flush_batch():
+                    self.logger.info("Flushing batched email alerts...")
+                    flushed = self.notification_handler.flush_batched_alerts()
+                    if flushed > 0:
+                        self.logger.info(f"Flushed {flushed} batched alerts")
+                        
             else:
                 self.logger.info("Scan completed: No alerts detected")
 
