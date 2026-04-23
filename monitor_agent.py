@@ -31,6 +31,7 @@ import config
 from alert_manager import AlertManager
 from demo_scenarios import get_simulated_alerts
 from process_analyzer import ProcessAnalyzer
+from process_control import ProcessControlManager
 from report_generator import ReportGenerator
 from service_auditor import ServiceAuditor, baseline_names_from_file, build_baseline_payload
 
@@ -84,6 +85,7 @@ class MonitoringAgent:
         self.alert_manager = AlertManager(dedup=dedup_alerts)
         self.process_analyzer = ProcessAnalyzer()
         self.service_auditor = ServiceAuditor()
+        self.process_control_manager = ProcessControlManager()
         self.report_generator: Optional[ReportGenerator] = None
         self._seen_signatures: Optional[Set[Tuple[str, str]]] = None
         self._scan_count = 0

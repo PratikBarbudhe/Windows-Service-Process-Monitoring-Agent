@@ -270,3 +270,13 @@ ALERT_TRIGGER_UNUSUAL_SERVICE = os.environ.get("WSPMA_ALERT_UNUSUAL_SERVICE", "t
 # Notification Rate Limiting (prevent alert storms)
 RATE_LIMIT_ENABLED = os.environ.get("WSPMA_RATE_LIMIT", "true").lower() == "true"
 RATE_LIMIT_SECONDS = int(os.environ.get("WSPMA_RATE_LIMIT_SECONDS", "60"))  # Minimum seconds between same alert type
+
+# --- Process Control Configuration ---
+PROCESS_CONTROL_ENABLED = os.environ.get("WSPMA_PROCESS_CONTROL_ENABLED", "false").lower() == "true"
+AUTO_KILL_BLACKLISTED = os.environ.get("WSPMA_AUTO_KILL_BLACKLISTED", "false").lower() == "true"
+AUTO_BLOCK_SUSPICIOUS = os.environ.get("WSPMA_AUTO_BLOCK_SUSPICIOUS", "false").lower() == "true"
+PROCESS_CONTROL_METHOD = os.environ.get("WSPMA_BLOCK_METHOD", "defender")  # defender or applocker
+
+# Process control action configuration
+KILL_ON_CRITICAL_ALERT = os.environ.get("WSPMA_KILL_ON_CRITICAL", "false").lower() == "true"
+REQUIRE_CONFIRMATION = os.environ.get("WSPMA_REQUIRE_CONFIRMATION", "true").lower() == "true"
