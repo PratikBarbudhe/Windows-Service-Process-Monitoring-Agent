@@ -175,6 +175,38 @@ python process_control_cli.py stats
 [Environment]::SetEnvironmentVariable("WSPMA_REQUIRE_CONFIRMATION", "true", "Machine")
 ```
 
+## Admin Panel Web Interface
+
+```powershell
+# Start admin panel
+python admin_panel.py
+
+# Access in browser: http://localhost:5000
+# Default login: admin / admin123
+```
+
+### Admin Panel Features
+
+```
+Dashboard       - System statistics, status, alerts
+Logs           - Alert viewer with filtering and search
+Processes      - Manage whitelist/blacklist
+Configuration  - Adjust thresholds and settings
+History        - View process kill audit trail
+```
+
+### Change Admin Credentials
+
+Edit `admin_panel.py`:
+
+```python
+from werkzeug.security import generate_password_hash
+
+ADMIN_USERS = {
+    "admin": generate_password_hash("your_new_password")
+}
+```
+
 ## View Logs
 
 ```powershell

@@ -14,3 +14,7 @@ pywin32[services]>=305
 # Notification and Alert dependencies
 win10toast>=0.9
 
+# Web Admin Panel dependencies
+Flask>=2.3.0
+Werkzeug>=2.3.0
+

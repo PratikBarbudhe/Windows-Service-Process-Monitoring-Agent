@@ -266,6 +266,38 @@ python service_manager_cli.py remove
 
 **Related Documentation**: [SERVICE_INSTALLATION_GUIDE.md](SERVICE_INSTALLATION_GUIDE.md), [WINDOWS_SERVICE_FEATURES.md](WINDOWS_SERVICE_FEATURES.md)
 
+### Web-Based Admin Panel
+
+Manage the system through an intuitive web interface:
+
+```bash
+# Start the admin panel
+python admin_panel.py
+
+# Then open browser: http://localhost:5000
+# Default login: admin / admin123
+```
+
+**Admin Panel Features**:
+- 🔐 Secure login system
+- 📊 Real-time dashboard with statistics
+- 📋 Alert log viewer with filtering
+- ⚙️ Configuration management (thresholds, notifications)
+- 📝 Whitelist/blacklist process management
+- 📈 Process kill history and audit trail
+
+**Use Cases**:
+```bash
+# View recent alerts in dashboard
+# Filter high-severity incidents in logs
+# Add suspicious process to blacklist
+# Configure system thresholds via UI
+# Review kill history for compliance
+# Export audit reports for review
+```
+
+**Related Documentation**: [ADMIN_PANEL_GUIDE.md](ADMIN_PANEL_GUIDE.md)
+
 ## Project Structure
 
 ```
