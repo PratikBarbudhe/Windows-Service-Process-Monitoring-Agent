@@ -40,6 +40,22 @@ This monitoring agent analyzes Windows services and processes to identify anomal
 - ✅ Timestamped logs
 - ✅ Actionable recommendations
 
+### Process Control
+- ✅ Kill suspicious processes (graceful or force termination)
+- ✅ Whitelist trusted processes
+- ✅ Blacklist malicious processes with auto-kill
+- ✅ Process termination audit trail
+- ✅ Automatic threat response
+- ✅ Windows Defender & AppLocker integration
+
+### Windows Service Integration
+- ✅ Auto-start on boot
+- ✅ Background silent operation
+- ✅ Email alert notifications
+- ✅ Desktop notifications
+- ✅ Rate limiting & alert batching
+- ✅ Automatic crash recovery
+
 ## Installation
 
 ### Prerequisites
@@ -184,6 +200,71 @@ python monitor_agent.py --compare logs/service_baseline_20260410_120000.json
 | `--interval N` | Set monitoring interval in seconds (default: 60) |
 | `--baseline` | Create baseline snapshot of services |
 | `--compare FILE` | Compare current state with baseline file |
+
+### Process Control Commands
+
+Manage process execution and build threat response lists:
+
+```bash
+# Kill a suspicious process (graceful termination, 10s timeout)
+python process_control_cli.py kill 1234 --reason "Malware detected"
+
+# Force kill (immediate termination)
+python process_control_cli.py kill 1234 --force --reason "Ransomware"
+
+# Whitelist trusted processes
+python process_control_cli.py whitelist "explorer.exe" --reason "Windows system process"
+
+# Blacklist malicious processes (manual kill on request)
+python process_control_cli.py blacklist "mimikatz.exe" --reason "Credential theft"
+
+# Auto-kill blacklisted processes (when detected by monitoring agent)
+python process_control_cli.py blacklist "ransomware.exe" --auto-block
+
+# View process control lists
+python process_control_cli.py list-whitelist
+python process_control_cli.py list-blacklist
+
+# View kill history (audit trail)
+python process_control_cli.py history --limit 20
+
+# Check process status
+python process_control_cli.py check "notepad.exe"
+
+# View statistics
+python process_control_cli.py stats
+```
+
+**Related Documentation**: [PROCESS_CONTROL_GUIDE.md](PROCESS_CONTROL_GUIDE.md)
+
+### Windows Service Management
+
+Install and manage the monitoring agent as a Windows Service:
+
+```bash
+# Install with auto-start (admin required)
+python service_manager_cli.py install --auto-start
+
+# Interactive setup (recommended)
+python setup_service.py
+
+# Service control
+python service_manager_cli.py start
+python service_manager_cli.py stop
+python service_manager_cli.py restart
+
+# Configuration
+python service_manager_cli.py set-auto-start    # Auto-start on boot
+python service_manager_cli.py set-manual         # Manual startup only
+
+# Status check
+python service_manager_cli.py status
+
+# Remove service
+python service_manager_cli.py remove
+```
+
+**Related Documentation**: [SERVICE_INSTALLATION_GUIDE.md](SERVICE_INSTALLATION_GUIDE.md), [WINDOWS_SERVICE_FEATURES.md](WINDOWS_SERVICE_FEATURES.md)
 
 ## Project Structure
 

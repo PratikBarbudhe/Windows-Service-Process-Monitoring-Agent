@@ -1,0 +1,11 @@
+{
+  "malware.exe": {
+    "name": "malware.exe",
+    "path": null,
+    "hash_value": null,
+    "reason": "Ransomware variant",
+    "added_at": "2026-04-23T23:54:19.369289",
+    "added_by": "cli",
+    "auto_block": true
+  }
+}

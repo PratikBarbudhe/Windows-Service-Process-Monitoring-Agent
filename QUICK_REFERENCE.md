@@ -99,6 +99,82 @@ python service_manager_cli.py remove
 [Environment]::SetEnvironmentVariable("MONITOR_RETRY_DELAY", "30", "Machine")
 ```
 
+## Process Control Commands
+
+### Kill Process
+
+```powershell
+# Graceful termination (10-second timeout)
+python process_control_cli.py kill 1234 --reason "Malware detected"
+
+# Force kill immediately
+python process_control_cli.py kill 1234 --force --reason "Ransomware"
+```
+
+### Whitelist (Trusted Processes)
+
+```powershell
+# Add to whitelist
+python process_control_cli.py whitelist "explorer.exe" --reason "Windows system process"
+
+# List all whitelisted
+python process_control_cli.py list-whitelist
+
+# Remove from whitelist
+python process_control_cli.py remove-whitelist "explorer.exe"
+```
+
+### Blacklist (Malicious Processes)
+
+```powershell
+# Add to blacklist (manual review before kill)
+python process_control_cli.py blacklist "mimikatz.exe" --reason "Credential theft tool"
+
+# Add with auto-kill (auto-terminate if detected)
+python process_control_cli.py blacklist "ransomware.exe" --auto-block --reason "Ransomware"
+
+# List all blacklisted
+python process_control_cli.py list-blacklist
+
+# Remove from blacklist
+python process_control_cli.py remove-blacklist "mimikatz.exe"
+```
+
+### History & Status
+
+```powershell
+# View kill history
+python process_control_cli.py history --limit 20
+
+# Check if process is whitelisted/blacklisted
+python process_control_cli.py check "notepad.exe"
+
+# View statistics
+python process_control_cli.py stats
+```
+
+## Process Control Configuration
+
+```powershell
+# Enable process control
+[Environment]::SetEnvironmentVariable("WSPMA_PROCESS_CONTROL_ENABLED", "true", "Machine")
+
+# Auto-kill blacklisted processes
+[Environment]::SetEnvironmentVariable("WSPMA_AUTO_KILL_BLACKLISTED", "true", "Machine")
+
+# Block process execution
+[Environment]::SetEnvironmentVariable("WSPMA_AUTO_BLOCK_SUSPICIOUS", "true", "Machine")
+
+# Blocking method (defender or applocker)
+[Environment]::SetEnvironmentVariable("WSPMA_BLOCK_METHOD", "defender", "Machine")
+
+# Kill on critical alert (use with caution!)
+[Environment]::SetEnvironmentVariable("WSPMA_KILL_ON_CRITICAL", "false", "Machine")
+
+# Require confirmation for auto-actions
+[Environment]::SetEnvironmentVariable("WSPMA_REQUIRE_CONFIRMATION", "true", "Machine")
+```
+
 ## View Logs
 
 ```powershell

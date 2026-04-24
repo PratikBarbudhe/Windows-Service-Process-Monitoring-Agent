@@ -187,6 +187,72 @@ class MonitoringAgent:
             _print_status("Appending simulated demonstration alerts...", "debug")
             self.alert_manager.add_alerts(get_simulated_alerts())
 
+    def _process_control_actions(self) -> None:
+        """Execute automatic process control actions based on alerts and blacklist."""
+        if not config.PROCESS_CONTROL_ENABLED:
+            return
+
+        try:
+            # Auto-kill blacklisted processes if enabled
+            if config.AUTO_KILL_BLACKLISTED:
+                _print_status("Checking for blacklisted processes...", "action")
+                kill_records = self.process_control_manager.auto_kill_blacklisted(
+                    self.process_analyzer.processes
+                )
+
+                if kill_records:
+                    _print_status(f"Auto-killed {len(kill_records)} blacklisted process(es)", "warning")
+                    for record in kill_records:
+                        if record.success:
+                            self.alert_manager.add_alert(
+                                {
+                                    "type": "Process Control Action",
+                                    "severity": config.SEVERITY_HIGH,
+                                    "risk_score": config.RISK_SCORES[config.SEVERITY_HIGH],
+                                    "timestamp": datetime.now(),
+                                    "process_name": record.name,
+                                    "pid": record.pid,
+                                    "path": record.path or "N/A",
+                                    "reason": record.reason,
+                                    "description": f"Auto-killed blacklisted process: {record.name} (PID {record.pid})",
+                                }
+                            )
+                        else:
+                            logger.warning(
+                                f"Failed to auto-kill process {record.name} "
+                                f"(PID {record.pid}): {record.error_message}"
+                            )
+
+            # Kill processes matching critical alerts if configured
+            if config.KILL_ON_CRITICAL_ALERT:
+                alerts = self.alert_manager.get_alerts()
+                critical_alerts = [
+                    alert for alert in alerts
+                    if alert.get("severity") == config.SEVERITY_CRITICAL
+                ]
+
+                for alert in critical_alerts:
+                    if alert.get("pid"):
+                        _print_status(
+                            f"Killing process on critical alert: {alert.get('process_name')} "
+                            f"(PID {alert.get('pid')})",
+                            "warning"
+                        )
+                        record = self.process_control_manager.kill_process(
+                            alert.get("pid"),
+                            reason=f"Critical alert: {alert.get('type')}",
+                            force=True
+                        )
+                        if not record.success:
+                            logger.warning(
+                                f"Failed to kill process on critical alert: "
+                                f"{record.error_message}"
+                            )
+
+        except Exception as e:
+            logger.error(f"Process control action failed: {e}", exc_info=True)
+            _print_status(f"Process control failed: {e}", "warning")
+
     def _generate_reports_and_exports(
         self,
         export_csv: bool = False,
@@ -258,6 +324,14 @@ class MonitoringAgent:
                 logger.error(f"Service auditing failed: {e}", exc_info=True)
                 _print_status(f"Service auditing failed: {e}", "error")
                 raise
+
+            # Process control actions phase
+            try:
+                self._process_control_actions()
+            except Exception as e:
+                logger.error(f"Process control failed: {e}", exc_info=True)
+                _print_status(f"Process control failed: {e}", "warning")
+                # Continue with reporting even if process control fails
 
             # Simulation (if requested)
             if simulate:

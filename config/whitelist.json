@@ -1,0 +1,11 @@
+{
+  "explorer.exe": {
+    "name": "explorer.exe",
+    "path": null,
+    "hash_value": null,
+    "reason": "Windows system process",
+    "added_at": "2026-04-23T23:53:49.954947",
+    "added_by": "cli",
+    "auto_block": false
+  }
+}
