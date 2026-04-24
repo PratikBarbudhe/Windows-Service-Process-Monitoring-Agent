@@ -26,7 +26,7 @@ python admin_panel.py
 
 1. Open browser: **http://localhost:5000**
 2. Username: **admin**
-3. Password: **admin123**
+3. Password: **admin1234**
 
 ⚠️ **Change these credentials immediately in production!**
 
