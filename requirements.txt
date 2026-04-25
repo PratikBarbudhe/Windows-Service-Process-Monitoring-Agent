@@ -14,7 +14,9 @@ pywin32[services]>=305
 # Notification and Alert dependencies
 win10toast>=0.9
 
-# Web Admin Panel dependencies
+# Web Admin Panel & REST API dependencies
 Flask>=2.3.0
 Werkzeug>=2.3.0
+Flask-CORS>=4.0.0
+PyJWT>=2.8.0
 
