@@ -417,6 +417,254 @@ curl "http://localhost:5001/api/reports/summary?hours=24" \
 #### GET /api/reports/detailed
 Get detailed report.
 
+### Chart & Visualization Endpoints
+
+These endpoints provide data optimized for visualization and charting.
+
+#### GET /api/charts/cpu-timeline
+Get CPU usage timeline data for charts.
+
+**Query Parameters:**
+- `hours` (integer): Number of hours to look back, default 1
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "timeline": [
+      {
+        "timestamp": "2026-04-25T10:00:00+00:00",
+        "system_cpu": 25.5,
+        "process_count": 145
+      }
+    ],
+    "hours": 24,
+    "count": 144
+  }
+}
+```
+
+**Usage Examples:**
+
+Chart.js:
+```javascript
+fetch('http://localhost:5001/api/charts/cpu-timeline?hours=24', {
+  headers: { 'Authorization': 'Bearer <token>' }
+})
+.then(r => r.json())
+.then(data => {
+  const labels = data.data.timeline.map(d => d.timestamp);
+  const values = data.data.timeline.map(d => d.system_cpu);
+  // Create Chart.js line chart
+})
+```
+
+Python:
+```python
+client.session.get(
+  'http://localhost:5001/api/charts/cpu-timeline?hours=24',
+  headers={'Authorization': f'Bearer {token}'}
+).json()
+```
+
+Curl:
+```bash
+curl "http://localhost:5001/api/charts/cpu-timeline?hours=24" \
+  -H "Authorization: Bearer <token>"
+```
+
+#### GET /api/charts/memory-timeline
+Get memory usage timeline data for charts.
+
+**Query Parameters:**
+- `hours` (integer): Number of hours to look back, default 1
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "timeline": [
+      {
+        "timestamp": "2026-04-25T10:00:00+00:00",
+        "system_memory_percent": 45.2,
+        "memory_available_mb": 8192
+      }
+    ],
+    "hours": 24,
+    "count": 144
+  }
+}
+```
+
+#### GET /api/charts/top-processes-cpu
+Get top processes ranked by CPU usage.
+
+**Query Parameters:**
+- `hours` (integer): Number of hours to look back, default 1
+- `limit` (integer): Maximum processes to return, default 10
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "processes": [
+      {
+        "name": "chrome.exe",
+        "avg_cpu": 15.5,
+        "max_cpu": 28.3,
+        "samples": 120
+      }
+    ],
+    "hours": 1,
+    "limit": 10,
+    "count": 8
+  }
+}
+```
+
+**Usage - React/Recharts:**
+```jsx
+const [data, setData] = useState([]);
+
+useEffect(() => {
+  fetch('http://localhost:5001/api/charts/top-processes-cpu?limit=10', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  .then(r => r.json())
+  .then(d => {
+    const formatted = d.data.processes.map(p => ({
+      name: p.name,
+      cpu: p.avg_cpu
+    }));
+    setData(formatted);
+  });
+}, []);
+
+return (
+  <BarChart data={data}>
+    <Bar dataKey="cpu" />
+  </BarChart>
+);
+```
+
+#### GET /api/charts/top-processes-memory
+Get top processes ranked by memory usage.
+
+**Query Parameters:**
+- `hours` (integer): Number of hours to look back, default 1
+- `limit` (integer): Maximum processes to return, default 10
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "processes": [
+      {
+        "name": "python.exe",
+        "avg_memory_mb": 256.3,
+        "max_memory_mb": 512.5,
+        "samples": 120
+      }
+    ],
+    "hours": 1,
+    "limit": 10,
+    "count": 7
+  }
+}
+```
+
+#### GET /api/charts/process-cpu/{process_name}
+Get CPU timeline for a specific process.
+
+**Path Parameters:**
+- `process_name` (string): Name of the process
+
+**Query Parameters:**
+- `hours` (integer): Number of hours to look back, default 1
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "process_name": "chrome.exe",
+    "timeline": [
+      {
+        "timestamp": "2026-04-25T10:00:00+00:00",
+        "cpu": 12.5
+      }
+    ],
+    "hours": 1,
+    "count": 12
+  }
+}
+```
+
+**Example:**
+```bash
+curl "http://localhost:5001/api/charts/process-cpu/chrome.exe?hours=1" \
+  -H "Authorization: Bearer <token>"
+```
+
+#### GET /api/charts/process-memory/{process_name}
+Get memory timeline for a specific process.
+
+**Path Parameters:**
+- `process_name` (string): Name of the process
+
+**Query Parameters:**
+- `hours` (integer): Number of hours to look back, default 1
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "process_name": "python.exe",
+    "timeline": [
+      {
+        "timestamp": "2026-04-25T10:00:00+00:00",
+        "memory_mb": 256.3
+      }
+    ],
+    "hours": 1,
+    "count": 12
+  }
+}
+```
+
+#### GET /api/charts/metrics-summary
+Get aggregated summary statistics for a time period.
+
+**Query Parameters:**
+- `hours` (integer): Time period for summary, default 24
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "summary": {
+      "time_period_hours": 24,
+      "snapshot_count": 288,
+      "unique_processes": 145,
+      "cpu_avg": 15.5,
+      "cpu_max": 95.2,
+      "cpu_min": 5.1,
+      "memory_avg_percent": 45.3,
+      "memory_max_percent": 78.5,
+      "memory_min_percent": 38.2,
+      "total_threads": 2500,
+      "total_handles": 15000
+    }
+  }
+}
+```
+
 ### System Endpoints
 
 #### GET /api/health

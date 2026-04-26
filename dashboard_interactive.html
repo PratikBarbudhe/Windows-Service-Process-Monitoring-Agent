@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Monitoring Dashboard</title>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Moment.js for date/time handling -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        label {
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        select, input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        select:hover, input:hover {
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            color: #333;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .metric-unit {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .chart-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+        
+        .table-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f5f7fa;
+            color: #333;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e1e4e8;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e1e4e8;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-high {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .badge-medium {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .badge-low {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc2626;
+        }
+        
+        .success-message {
+            background: #dcfce7;
+            color: #16a34a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #16a34a;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header-controls {
+                width: 100%;
+                flex-direction: column;
+                margin-top: 20px;
+            }
+            
+            .control-group {
+                width: 100%;
+                flex-direction: column;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>🖥️ Windows Monitoring Dashboard</h1>
+                <p class="header-subtitle">Real-time system metrics and process monitoring</p>
+            </div>
+            <div class="header-controls">
+                <div class="control-group">
+                    <label for="timeRange">Time Range:</label>
+                    <select id="timeRange">
+                        <option value="1">Last 1 Hour</option>
+                        <option value="6">Last 6 Hours</option>
+                        <option value="24" selected>Last 24 Hours</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="refreshRate">Refresh Rate:</label>
+                    <select id="refreshRate">
+                        <option value="30">30 seconds</option>
+                        <option value="60" selected>1 minute</option>
+                        <option value="300">5 minutes</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="refreshDashboard()">🔄 Refresh Now</button>
+            </div>
+        </div>
+        
+        <!-- Status Messages -->
+        <div id="messageContainer"></div>
+        
+        <!-- Metrics Grid -->
+        <div class="metrics-grid" id="metricsGrid">
+            <div class="metric-card">
+                <div class="metric-label">CPU Usage</div>
+                <div class="metric-value" id="cpuValue">-</div>
+                <div class="metric-unit">% of total</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Memory Usage</div>
+                <div class="metric-value" id="memoryValue">-</div>
+                <div class="metric-unit">% of total</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Running Processes</div>
+                <div class="metric-value" id="processCount">-</div>
+                <div class="metric-unit">active processes</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">System Health</div>
+                <div class="metric-value" id="healthStatus">Good</div>
+                <div class="metric-unit">normal operation</div>
+            </div>
+        </div>
+        
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <!-- CPU Timeline Chart -->
+            <div class="chart-container">
+                <h3 class="chart-title">CPU Usage Over Time</h3>
+                <div class="chart-wrapper">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Memory Timeline Chart -->
+            <div class="chart-container">
+                <h3 class="chart-title">Memory Usage Over Time</h3>
+                <div class="chart-wrapper">
+                    <canvas id="memoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Grid Row 2 -->
+        <div class="charts-grid">
+            <!-- Top Processes by CPU -->
+            <div class="chart-container">
+                <h3 class="chart-title">Top 10 Processes by CPU</h3>
+                <div class="chart-wrapper">
+                    <canvas id="topCpuChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Top Processes by Memory -->
+            <div class="chart-container">
+                <h3 class="chart-title">Top 10 Processes by Memory</h3>
+                <div class="chart-wrapper">
+                    <canvas id="topMemoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading dashboard data...</p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            Last updated: <span id="lastUpdate">-</span> | Windows Service Monitoring Agent
+        </div>
+    </div>
+    
+    <!-- Configuration Modal -->
+    <div id="configModal" style="display: none;">
+        <div style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; margin: 100px auto;">
+            <h2>API Configuration</h2>
+            <div style="margin: 20px 0;">
+                <label>API Server URL:</label>
+                <input type="text" id="apiUrl" value="http://localhost:5001" style="width: 100%; padding: 10px; margin-top: 5px;">
+            </div>
+            <div style="margin: 20px 0;">
+                <label>Username:</label>
+                <input type="text" id="username" value="admin" style="width: 100%; padding: 10px; margin-top: 5px;">
+            </div>
+            <div style="margin: 20px 0;">
+                <label>Password:</label>
+                <input type="password" id="password" value="admin123" style="width: 100%; padding: 10px; margin-top: 5px;">
+            </div>
+            <button class="btn" onclick="configureAndLogin()" style="width: 100%;">Login</button>
+        </div>
+    </div>
+    
+    <script>
+        // Global state
+        const state = {
+            apiUrl: localStorage.getItem('apiUrl') || 'http://localhost:5001',
+            token: localStorage.getItem('apiToken') || null,
+            charts: {},
+            refreshInterval: null
+        };
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!state.token) {
+                showConfigModal();
+            } else {
+                initializeDashboard();
+            }
+        });
+        
+        // Show configuration modal
+        function showConfigModal() {
+            document.getElementById('configModal').style.display = 'block';
+        }
+        
+        // Configure API and login
+        async function configureAndLogin() {
+            state.apiUrl = document.getElementById('apiUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${state.apiUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (!response.ok) {
+                    showMessage('Login failed. Check credentials.', 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                state.token = data.data.token;
+                localStorage.setItem('apiUrl', state.apiUrl);
+                localStorage.setItem('apiToken', state.token);
+                
+                document.getElementById('configModal').style.display = 'none';
+                initializeDashboard();
+            } catch (error) {
+                showMessage(`Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize dashboard
+        function initializeDashboard() {
+            refreshDashboard();
+            
+            // Set up auto-refresh
+            const refreshRate = parseInt(document.getElementById('refreshRate').value) * 1000;
+            if (state.refreshInterval) clearInterval(state.refreshInterval);
+            state.refreshInterval = setInterval(refreshDashboard, refreshRate);
+            
+            // Update refresh rate when changed
+            document.getElementById('refreshRate').addEventListener('change', (e) => {
+                if (state.refreshInterval) clearInterval(state.refreshInterval);
+                state.refreshInterval = setInterval(refreshDashboard, parseInt(e.target.value) * 1000);
+            });
+        }
+        
+        // Refresh dashboard
+        async function refreshDashboard() {
+            const hours = parseInt(document.getElementById('timeRange').value);
+            
+            showLoading(true);
+            
+            try {
+                // Fetch all data in parallel
+                const [cpuTimeline, memoryTimeline, topCpu, topMemory, summary] = await Promise.all([
+                    apiRequest(`/api/charts/cpu-timeline?hours=${hours}`),
+                    apiRequest(`/api/charts/memory-timeline?hours=${hours}`),
+                    apiRequest(`/api/charts/top-processes-cpu?hours=${hours}&limit=10`),
+                    apiRequest(`/api/charts/top-processes-memory?hours=${hours}&limit=10`),
+                    apiRequest(`/api/charts/metrics-summary?hours=${hours}`)
+                ]);
+                
+                // Update metrics
+                updateMetrics(summary);
+                
+                // Update charts
+                updateCpuChart(cpuTimeline);
+                updateMemoryChart(memoryTimeline);
+                updateTopCpuChart(topCpu);
+                updateTopMemoryChart(topMemory);
+                
+                // Update last update time
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                
+                showMessage('Dashboard updated successfully', 'success', 3000);
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // API request helper
+        async function apiRequest(endpoint) {
+            const response = await fetch(`${state.apiUrl}${endpoint}`, {
+                headers: { 'Authorization': `Bearer ${state.token}` }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    state.token = null;
+                    localStorage.removeItem('apiToken');
+                    showConfigModal();
+                    throw new Error('Authentication expired');
+                }
+                throw new Error(`API error: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            return data.data;
+        }
+        
+        // Update metric cards
+        function updateMetrics(summary) {
+            if (!summary || !summary.summary) return;
+            
+            const s = summary.summary;
+            document.getElementById('cpuValue').textContent = s.cpu_avg ? s.cpu_avg.toFixed(1) : '-';
+            document.getElementById('memoryValue').textContent = s.memory_avg_percent ? s.memory_avg_percent.toFixed(1) : '-';
+            document.getElementById('processCount').textContent = s.unique_processes || '-';
+            
+            // Determine health status
+            let health = 'Good';
+            if (s.cpu_max > 80 || s.memory_max_percent > 80) health = 'Warning';
+            if (s.cpu_max > 95 || s.memory_max_percent > 95) health = 'Critical';
+            document.getElementById('healthStatus').textContent = health;
+        }
+        
+        // Update CPU chart
+        function updateCpuChart(data) {
+            const ctx = document.getElementById('cpuChart');
+            if (!ctx) return;
+            
+            const labels = data.timeline.map(d => new Date(d.timestamp).toLocaleTimeString());
+            const cpuValues = data.timeline.map(d => d.system_cpu);
+            
+            if (state.charts.cpu) state.charts.cpu.destroy();
+            
+            state.charts.cpu = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'System CPU %',
+                        data: cpuValues,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: '#666' },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: { ticks: { color: '#666' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        // Update Memory chart
+        function updateMemoryChart(data) {
+            const ctx = document.getElementById('memoryChart');
+            if (!ctx) return;
+            
+            const labels = data.timeline.map(d => new Date(d.timestamp).toLocaleTimeString());
+            const memoryValues = data.timeline.map(d => d.system_memory_percent);
+            
+            if (state.charts.memory) state.charts.memory.destroy();
+            
+            state.charts.memory = new Chart(ctx, {
+                type: 'area',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Memory %',
+                        data: memoryValues,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { color: '#666' },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: { ticks: { color: '#666' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        // Update Top CPU chart
+        function updateTopCpuChart(data) {
+            const ctx = document.getElementById('topCpuChart');
+            if (!ctx || !data.processes || data.processes.length === 0) return;
+            
+            const labels = data.processes.map(p => p.name);
+            const cpuValues = data.processes.map(p => p.avg_cpu);
+            
+            if (state.charts.topCpu) state.charts.topCpu.destroy();
+            
+            state.charts.topCpu = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Avg CPU %',
+                        data: cpuValues,
+                        backgroundColor: '#667eea',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#666' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { ticks: { color: '#666' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        // Update Top Memory chart
+        function updateTopMemoryChart(data) {
+            const ctx = document.getElementById('topMemoryChart');
+            if (!ctx || !data.processes || data.processes.length === 0) return;
+            
+            const labels = data.processes.map(p => p.name);
+            const memoryValues = data.processes.map(p => p.avg_memory_mb);
+            
+            if (state.charts.topMemory) state.charts.topMemory.destroy();
+            
+            state.charts.topMemory = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Avg Memory MB',
+                        data: memoryValues,
+                        backgroundColor: '#764ba2',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#666' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        y: { ticks: { color: '#666' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        // Show/hide loading indicator
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+        
+        // Show message
+        function showMessage(text, type = 'info', duration = 5000) {
+            const container = document.getElementById('messageContainer');
+            const div = document.createElement('div');
+            div.className = `${type}-message`;
+            div.textContent = text;
+            container.appendChild(div);
+            
+            if (duration > 0) {
+                setTimeout(() => div.remove(), duration);
+            }
+        }
+    </script>
+</body>
+</html>

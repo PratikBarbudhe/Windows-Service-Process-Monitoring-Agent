@@ -47,6 +47,7 @@ from flask_cors import CORS
 
 import config
 from alert_manager import AlertManager
+from metrics_collector import MetricsCollector
 from process_analyzer import ProcessAnalyzer
 from process_control import ProcessControlManager
 from report_generator import ReportGenerator
@@ -84,6 +85,7 @@ service_auditor = ServiceAuditor()
 alert_manager = AlertManager()
 process_control_manager = ProcessControlManager()
 report_generator = ReportGenerator()
+metrics_collector = MetricsCollector()
 
 # ============================================================================
 # Response Helpers
@@ -948,6 +950,274 @@ def get_detailed_report():
     
     except Exception as e:
         logger.error(f"Error generating detailed report: {e}")
+        return error_response("server_error", str(e), 500)
+
+
+# ============================================================================
+# Chart/Visualization Endpoints
+# ============================================================================
+
+@app.route(f'{API_PREFIX}/charts/cpu-timeline', methods=['GET'])
+@token_required
+def get_cpu_timeline():
+    """
+    Get CPU usage timeline for charts.
+    
+    Query Parameters:
+        - hours: Number of hours to look back (default: 1)
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "timeline": [
+                {"timestamp": "...", "system_cpu": 25.5, "process_count": 150}
+            ]
+        }
+    }
+    """
+    try:
+        hours = request.args.get('hours', 1, type=int)
+        timeline = metrics_collector.get_cpu_usage_timeline(hours=hours)
+        
+        return success_response({
+            "timeline": timeline,
+            "hours": hours,
+            "count": len(timeline)
+        }, "CPU timeline retrieved", 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving CPU timeline: {e}")
+        return error_response("server_error", str(e), 500)
+
+
+@app.route(f'{API_PREFIX}/charts/memory-timeline', methods=['GET'])
+@token_required
+def get_memory_timeline():
+    """
+    Get memory usage timeline for charts.
+    
+    Query Parameters:
+        - hours: Number of hours to look back (default: 1)
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "timeline": [
+                {"timestamp": "...", "system_memory_percent": 45.2, "memory_available_mb": 8192}
+            ]
+        }
+    }
+    """
+    try:
+        hours = request.args.get('hours', 1, type=int)
+        timeline = metrics_collector.get_memory_usage_timeline(hours=hours)
+        
+        return success_response({
+            "timeline": timeline,
+            "hours": hours,
+            "count": len(timeline)
+        }, "Memory timeline retrieved", 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving memory timeline: {e}")
+        return error_response("server_error", str(e), 500)
+
+
+@app.route(f'{API_PREFIX}/charts/top-processes-cpu', methods=['GET'])
+@token_required
+def get_top_processes_cpu():
+    """
+    Get top processes by CPU usage for charts.
+    
+    Query Parameters:
+        - hours: Number of hours to look back (default: 1)
+        - limit: Maximum number of processes (default: 10)
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "processes": [
+                {"name": "chrome.exe", "avg_cpu": 15.5, "max_cpu": 28.3, "samples": 120}
+            ]
+        }
+    }
+    """
+    try:
+        hours = request.args.get('hours', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        
+        # Collect current snapshot to ensure we have data
+        metrics_collector.collect_snapshot()
+        
+        top_processes = metrics_collector.get_top_processes_by_cpu(hours=hours, limit=limit)
+        
+        return success_response({
+            "processes": top_processes,
+            "hours": hours,
+            "limit": limit,
+            "count": len(top_processes)
+        }, "Top processes by CPU retrieved", 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving top processes by CPU: {e}")
+        return error_response("server_error", str(e), 500)
+
+
+@app.route(f'{API_PREFIX}/charts/top-processes-memory', methods=['GET'])
+@token_required
+def get_top_processes_memory():
+    """
+    Get top processes by memory usage for charts.
+    
+    Query Parameters:
+        - hours: Number of hours to look back (default: 1)
+        - limit: Maximum number of processes (default: 10)
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "processes": [
+                {"name": "python.exe", "avg_memory_mb": 256.3, "max_memory_mb": 512.5, "samples": 120}
+            ]
+        }
+    }
+    """
+    try:
+        hours = request.args.get('hours', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        
+        # Collect current snapshot to ensure we have data
+        metrics_collector.collect_snapshot()
+        
+        top_processes = metrics_collector.get_top_processes_by_memory(hours=hours, limit=limit)
+        
+        return success_response({
+            "processes": top_processes,
+            "hours": hours,
+            "limit": limit,
+            "count": len(top_processes)
+        }, "Top processes by memory retrieved", 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving top processes by memory: {e}")
+        return error_response("server_error", str(e), 500)
+
+
+@app.route(f'{API_PREFIX}/charts/process-cpu/<process_name>', methods=['GET'])
+@token_required
+def get_process_cpu_timeline(process_name: str):
+    """
+    Get CPU usage timeline for a specific process.
+    
+    Path Parameters:
+        - process_name: Name of the process
+    
+    Query Parameters:
+        - hours: Number of hours to look back (default: 1)
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "timeline": [
+                {"timestamp": "...", "cpu": 12.5}
+            ]
+        }
+    }
+    """
+    try:
+        hours = request.args.get('hours', 1, type=int)
+        timeline = metrics_collector.get_process_cpu_timeline(process_name, hours=hours)
+        
+        return success_response({
+            "process_name": process_name,
+            "timeline": timeline,
+            "hours": hours,
+            "count": len(timeline)
+        }, f"CPU timeline for {process_name} retrieved", 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving process CPU timeline: {e}")
+        return error_response("server_error", str(e), 500)
+
+
+@app.route(f'{API_PREFIX}/charts/process-memory/<process_name>', methods=['GET'])
+@token_required
+def get_process_memory_timeline(process_name: str):
+    """
+    Get memory usage timeline for a specific process.
+    
+    Path Parameters:
+        - process_name: Name of the process
+    
+    Query Parameters:
+        - hours: Number of hours to look back (default: 1)
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "timeline": [
+                {"timestamp": "...", "memory_mb": 256.3}
+            ]
+        }
+    }
+    """
+    try:
+        hours = request.args.get('hours', 1, type=int)
+        timeline = metrics_collector.get_process_memory_timeline(process_name, hours=hours)
+        
+        return success_response({
+            "process_name": process_name,
+            "timeline": timeline,
+            "hours": hours,
+            "count": len(timeline)
+        }, f"Memory timeline for {process_name} retrieved", 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving process memory timeline: {e}")
+        return error_response("server_error", str(e), 500)
+
+
+@app.route(f'{API_PREFIX}/charts/metrics-summary', methods=['GET'])
+@token_required
+def get_metrics_summary():
+    """
+    Get summary metrics and statistics.
+    
+    Query Parameters:
+        - hours: Number of hours for summary (default: 24)
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "summary": {
+                "time_period_hours": 24,
+                "snapshot_count": 288,
+                "unique_processes": 145,
+                "cpu_avg": 15.5,
+                "cpu_max": 95.2,
+                "memory_avg_percent": 45.3,
+                ...
+            }
+        }
+    }
+    """
+    try:
+        hours = request.args.get('hours', 24, type=int)
+        summary = metrics_collector.get_summary_stats(hours=hours)
+        
+        return success_response({
+            "summary": summary
+        }, "Metrics summary retrieved", 200)
+    
+    except Exception as e:
+        logger.error(f"Error retrieving metrics summary: {e}")
         return error_response("server_error", str(e), 500)
 
 
