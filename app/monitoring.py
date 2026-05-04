@@ -33,6 +33,10 @@ class MonitoringAgent:
         logger.info("Scan complete: %s processes, %s alerts", len(processes), len(alerts))
         return result
 
+    def get_process_snapshot(self) -> list[dict]:
+        """Return current process snapshot without generating alerts/reports."""
+        return [item.to_dict() for item in self._enumerate_processes()]
+
     def _enumerate_processes(self) -> list[ProcessInfo]:
         entries: list[ProcessInfo] = []
         procs = list(psutil.process_iter(["pid", "name", "username", "exe", "memory_info"]))

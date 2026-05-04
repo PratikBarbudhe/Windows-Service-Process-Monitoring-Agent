@@ -40,3 +40,12 @@ def run_scan() -> dict:
 def get_alerts() -> dict:
     return {"alerts": [alert.to_dict() for alert in agent.alerts]}
 
+
+@app.get("/processes", dependencies=[Depends(verify_token)])
+def get_processes() -> dict:
+    try:
+        return {"processes": agent.get_process_snapshot()}
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("API process snapshot failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Process snapshot failed") from exc
+

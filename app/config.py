@@ -24,6 +24,8 @@ class Settings:
     api_host: str = os.getenv("API_HOST", "0.0.0.0")
     api_port: int = int(os.getenv("API_PORT", "8000"))
     api_token: str = os.getenv("API_TOKEN", "change-me")
+    dashboard_api_base_url: str = os.getenv("DASHBOARD_API_BASE_URL", "http://127.0.0.1:8000")
+    dashboard_api_token: str = os.getenv("DASHBOARD_API_TOKEN", os.getenv("API_TOKEN", "change-me"))
     scan_interval: int = int(os.getenv("SCAN_INTERVAL", "60"))
 
 

@@ -10,6 +10,8 @@ from typing import Any
 
 import pandas as pd
 import plotly.express as px
+import psutil
+import requests
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -118,6 +120,30 @@ def _load_latest_payload() -> dict:
     return json.loads(latest_file.read_text(encoding="utf-8"))
 
 
+def _api_headers(api_token: str) -> dict[str, str]:
+    return {"x-api-token": api_token}
+
+
+def _fetch_api_data(api_base_url: str, api_token: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    base = api_base_url.rstrip("/")
+    processes_resp = requests.get(
+        f"{base}/processes",
+        headers=_api_headers(api_token),
+        timeout=15,
+    )
+    processes_resp.raise_for_status()
+    alerts_resp = requests.get(
+        f"{base}/alerts",
+        headers=_api_headers(api_token),
+        timeout=15,
+    )
+    alerts_resp.raise_for_status()
+
+    processes = processes_resp.json().get("processes", [])
+    alerts = alerts_resp.json().get("alerts", [])
+    return processes, alerts
+
+
 def _export_alerts(alerts: list[dict[str, Any]]) -> str | None:
     if not alerts:
         return None
@@ -161,12 +187,25 @@ def render_header(last_updated: str, status_text: str, status_color: str) -> Non
         )
 
 
-def render_sidebar() -> tuple[str, bool, int]:
+def render_sidebar() -> tuple[str, bool, int, str, str, str]:
     st.sidebar.markdown("## Navigation")
     page = st.sidebar.radio(
         "Section",
         options=["Dashboard", "Processes", "Alerts", "Services"],
         label_visibility="collapsed",
+    )
+    st.sidebar.markdown("---")
+    data_source = st.sidebar.radio("Data source", ["Local Logs", "Remote API"], index=0)
+    api_base_url = st.sidebar.text_input(
+        "API Base URL",
+        value=settings.dashboard_api_base_url,
+        disabled=data_source != "Remote API",
+    )
+    api_token = st.sidebar.text_input(
+        "API Token",
+        value=settings.dashboard_api_token,
+        type="password",
+        disabled=data_source != "Remote API",
     )
     st.sidebar.markdown("---")
     auto_refresh = st.sidebar.toggle("Auto refresh", value=True)
@@ -177,15 +216,31 @@ def render_sidebar() -> tuple[str, bool, int]:
         value=5,
     )
     st.sidebar.caption("Theme: Dark SOC")
-    return page, auto_refresh, refresh_interval
+    return page, auto_refresh, refresh_interval, data_source, api_base_url, api_token
 
 
-def render_toolbar(alerts: list[dict[str, Any]]) -> None:
+def render_toolbar(
+    alerts: list[dict[str, Any]],
+    data_source: str,
+    api_base_url: str,
+    api_token: str,
+) -> None:
     c1, c2, c3 = st.columns([1, 1, 1.2])
     if c1.button("Run Scan", icon=":material/play_arrow:", use_container_width=True):
         with st.spinner("Running scan..."):
-            MonitoringAgent().run_scan()
-            st.success("Scan completed.")
+            try:
+                if data_source == "Remote API":
+                    response = requests.post(
+                        f"{api_base_url.rstrip('/')}/scan",
+                        headers=_api_headers(api_token),
+                        timeout=30,
+                    )
+                    response.raise_for_status()
+                else:
+                    MonitoringAgent().run_scan()
+                st.success("Scan completed.")
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Scan failed: {exc}")
             st.rerun()
     if c2.button("Reload Logs", icon=":material/refresh:", use_container_width=True):
         st.info("Logs reloaded.")
@@ -326,11 +381,58 @@ def render_alerts(alerts: list[dict[str, Any]]) -> None:
     st.dataframe(pd.DataFrame(visible_alerts), use_container_width=True, hide_index=True)
 
 
-def render_processes(processes: list[dict[str, Any]]) -> None:
+def _sample_live_processes(sample_seconds: float = 1.0) -> list[dict[str, Any]]:
+    procs = list(psutil.process_iter(["pid", "name", "username", "exe", "memory_info"]))
+
+    for proc in procs:
+        try:
+            proc.cpu_percent(interval=None)
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            continue
+
+    time.sleep(max(sample_seconds, 0.2))
+
+    rows: list[dict[str, Any]] = []
+    for proc in procs:
+        try:
+            mem_info = proc.info.get("memory_info")
+            memory_mb = round((mem_info.rss / 1024 / 1024) if mem_info else 0.0, 2)
+            rows.append(
+                {
+                    "pid": proc.info.get("pid"),
+                    "name": proc.info.get("name") or "unknown",
+                    "username": proc.info.get("username"),
+                    "exe": proc.info.get("exe"),
+                    "cpu_percent": round(float(proc.cpu_percent(interval=None)), 2),
+                    "memory_mb": memory_mb,
+                }
+            )
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            continue
+    return rows
+
+
+def render_processes(processes: list[dict[str, Any]], allow_live_sampling: bool = True) -> None:
     st.subheader("Process Inventory")
+
+    c1, c2 = st.columns([1.4, 2.6])
+    with c1:
+        live_mode = st.toggle(
+            "Use live process sampling",
+            value=allow_live_sampling,
+            disabled=not allow_live_sampling,
+        )
+    with c2:
+        st.caption("Live sampling gives more accurate CPU usage than stale log snapshots.")
+
+    if live_mode and allow_live_sampling:
+        with st.spinner("Sampling process CPU usage..."):
+            processes = _sample_live_processes(sample_seconds=1.0)
+
     if not processes:
         st.info("No process data available.")
         return
+
     df = pd.DataFrame(processes)
     if {"cpu_percent", "memory_mb"}.issubset(df.columns):
         df = df.sort_values(by=["cpu_percent", "memory_mb"], ascending=False)
@@ -339,6 +441,7 @@ def render_processes(processes: list[dict[str, Any]]) -> None:
             "Running in a Linux container (Streamlit Cloud), so you only see container processes "
             "instead of full Windows host processes."
         )
+    st.caption(f"Total visible processes in current runtime: {len(df)}")
     st.dataframe(df, use_container_width=True, hide_index=True)
 
 
@@ -354,15 +457,30 @@ def main() -> None:
     st.set_page_config(page_title="Windows Monitoring Agent", layout="wide", initial_sidebar_state="expanded")
     inject_css()
 
-    page, auto_refresh, refresh_interval = render_sidebar()
-    payload = _load_latest_payload()
-    processes = payload.get("processes", []) if payload else []
-    alerts = payload.get("alerts", []) if payload else []
+    page, auto_refresh, refresh_interval, data_source, api_base_url, api_token = render_sidebar()
+
+    payload: dict[str, Any] = {}
+    processes: list[dict[str, Any]] = []
+    alerts: list[dict[str, Any]] = []
+    source_error = ""
+
+    if data_source == "Remote API":
+        try:
+            processes, alerts = _fetch_api_data(api_base_url, api_token)
+            payload = {"processes": processes, "alerts": alerts}
+            st.caption(f"Connected to API: {api_base_url}")
+        except Exception as exc:  # noqa: BLE001
+            source_error = str(exc)
+            st.error(f"API connection failed: {source_error}")
+    else:
+        payload = _load_latest_payload()
+        processes = payload.get("processes", []) if payload else []
+        alerts = payload.get("alerts", []) if payload else []
     status_text, status_color = _status_from_alerts(alerts)
     updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     render_header(updated_at, status_text, status_color)
-    render_toolbar(alerts)
+    render_toolbar(alerts, data_source, api_base_url, api_token)
     st.markdown("")
 
     if not payload:
@@ -373,7 +491,7 @@ def main() -> None:
         render_charts(alerts)
         render_alerts(alerts)
     elif page == "Processes":
-        render_processes(processes)
+        render_processes(processes, allow_live_sampling=(data_source == "Local Logs"))
     elif page == "Alerts":
         render_alerts(alerts)
         render_charts(alerts)
