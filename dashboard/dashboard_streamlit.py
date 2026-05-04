@@ -169,7 +169,12 @@ def render_sidebar() -> tuple[str, bool, int]:
     )
     st.sidebar.markdown("---")
     auto_refresh = st.sidebar.toggle("Auto refresh", value=True)
-    refresh_interval = st.sidebar.slider("Refresh every (sec)", min_value=5, max_value=10, value=8)
+    refresh_interval = st.sidebar.slider(
+        "Refresh every (minutes)",
+        min_value=5,
+        max_value=60,
+        value=5,
+    )
     st.sidebar.caption("Theme: Dark SOC")
     return page, auto_refresh, refresh_interval
 
@@ -190,6 +195,13 @@ def render_toolbar(alerts: list[dict[str, Any]]) -> None:
             st.success(f"Exported: {exported}")
         else:
             st.warning("No alerts available to export.")
+
+
+def render_empty_state() -> None:
+    st.warning(
+        "No scan results found yet. Click 'Run Scan' to generate telemetry, "
+        "or run `python main.py` on the same environment as this dashboard."
+    )
 
 
 def _metric_card(label: str, value: int, icon: str, accent: str = "") -> None:
@@ -336,18 +348,17 @@ def main() -> None:
 
     page, auto_refresh, refresh_interval = render_sidebar()
     payload = _load_latest_payload()
-    if not payload:
-        st.warning("No scan results found. Run `python main.py` first.")
-        return
-
-    processes = payload.get("processes", [])
-    alerts = payload.get("alerts", [])
+    processes = payload.get("processes", []) if payload else []
+    alerts = payload.get("alerts", []) if payload else []
     status_text, status_color = _status_from_alerts(alerts)
     updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     render_header(updated_at, status_text, status_color)
     render_toolbar(alerts)
     st.markdown("")
+
+    if not payload:
+        render_empty_state()
 
     if page == "Dashboard":
         render_metrics(processes, alerts)
@@ -362,8 +373,8 @@ def main() -> None:
         render_services()
 
     if auto_refresh:
-        with st.spinner(f"Auto refresh in {refresh_interval}s..."):
-            time.sleep(refresh_interval)
+        with st.spinner(f"Auto refresh in {refresh_interval} minute(s)..."):
+            time.sleep(refresh_interval * 60)
         st.rerun()
 
 
