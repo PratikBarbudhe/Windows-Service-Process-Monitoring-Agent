@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import platform
 import sys
 import time
 from datetime import datetime
@@ -331,6 +332,13 @@ def render_processes(processes: list[dict[str, Any]]) -> None:
         st.info("No process data available.")
         return
     df = pd.DataFrame(processes)
+    if {"cpu_percent", "memory_mb"}.issubset(df.columns):
+        df = df.sort_values(by=["cpu_percent", "memory_mb"], ascending=False)
+    if platform.system() != "Windows":
+        st.caption(
+            "Running in a Linux container (Streamlit Cloud), so you only see container processes "
+            "instead of full Windows host processes."
+        )
     st.dataframe(df, use_container_width=True, hide_index=True)
 
 

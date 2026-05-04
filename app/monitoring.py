@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 import psutil
 
@@ -35,24 +35,34 @@ class MonitoringAgent:
 
     def _enumerate_processes(self) -> list[ProcessInfo]:
         entries: list[ProcessInfo] = []
-        for proc in psutil.process_iter(
-            ["pid", "name", "username", "exe", "cpu_percent", "memory_info"]
-        ):
+        procs = list(psutil.process_iter(["pid", "name", "username", "exe", "memory_info"]))
+
+        # Prime CPU counters first, then sample again after a short interval.
+        for proc in procs:
+            try:
+                proc.cpu_percent(interval=None)
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                continue
+
+        time.sleep(0.25)
+
+        for proc in procs:
             try:
                 mem = proc.info["memory_info"].rss / 1024 / 1024 if proc.info.get("memory_info") else 0.0
+                cpu = float(proc.cpu_percent(interval=None))
                 entries.append(
                     ProcessInfo(
                         pid=proc.info["pid"],
                         name=proc.info.get("name") or "unknown",
                         username=proc.info.get("username"),
                         exe=proc.info.get("exe"),
-                        cpu_percent=float(proc.info.get("cpu_percent") or 0.0),
+                        cpu_percent=round(cpu, 2),
                         memory_mb=round(mem, 2),
                     )
                 )
             except (psutil.AccessDenied, psutil.NoSuchProcess):
                 continue
-        return entries
+        return sorted(entries, key=lambda item: (item.cpu_percent, item.memory_mb), reverse=True)
 
     def _detect_alerts(self, processes: list[ProcessInfo]) -> list[Alert]:
         alerts: list[Alert] = []
