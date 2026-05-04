@@ -5,33 +5,22 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "windows-service-process-monitoring-agent"
 version = "0.1.0"
-description = "Windows service and process monitoring agent for defensive telemetry."
+description = "Production-ready Windows process monitoring agent with API and dashboard."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Pratik Barbudhe" }]
 dependencies = [
     "psutil>=5.9.0",
     "pywin32>=305",
-    "WMI>=1.5.1",
-    "colorama>=0.4.6",
     "streamlit>=1.28.0",
-    "PyQt6>=6.5.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "python-dotenv>=1.0.1",
 ]
 
 [project.scripts]
-monitor-agent = "monitor_agent:main"
+monitor-agent = "main:main"
 
 [tool.setuptools]
-py-modules = [
-    "monitor_agent",
-    "process_analyzer",
-    "service_auditor",
-    "alert_manager",
-    "report_generator",
-    "config",
-    "demo_scenarios",
-    "dashboard_streamlit",
-    "path_utils",
-]
-packages = ["gui"]
+packages = ["app", "api", "dashboard", "services", "cli"]
