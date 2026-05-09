@@ -101,6 +101,49 @@
             box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
         }
         
+        /* Navigation tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #f5f7fa;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .nav-tab:hover {
+            background: #ede9f6;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        /* Tab content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -178,11 +221,25 @@
             overflow-x: auto;
         }
         
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
         .table-title {
             color: #333;
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 20px;
+        }
+        
+        .table-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
         
         table {
@@ -220,19 +277,34 @@
             font-weight: 600;
         }
         
-        .badge-high {
+        .badge-high, .badge-HIGH {
             background: #fee2e2;
             color: #dc2626;
         }
         
-        .badge-medium {
+        .badge-medium, .badge-MEDIUM {
             background: #fef3c7;
             color: #d97706;
         }
         
-        .badge-low {
+        .badge-low, .badge-LOW {
             background: #dcfce7;
             color: #16a34a;
+        }
+        
+        .badge-info, .badge-INFO {
+            background: #dbeafe;
+            color: #0284c7;
+        }
+        
+        .badge-warning, .badge-WARNING {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .badge-error, .badge-ERROR {
+            background: #fee2e2;
+            color: #dc2626;
         }
         
         .error-message {
@@ -251,6 +323,15 @@
             border-radius: 6px;
             margin-bottom: 20px;
             border-left: 4px solid #16a34a;
+        }
+        
+        .info-message {
+            background: #dbeafe;
+            color: #0284c7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0284c7;
         }
         
         .loading {
@@ -278,11 +359,37 @@
             to { transform: rotate(360deg); }
         }
         
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
         .footer {
             text-align: center;
             color: white;
             padding: 20px;
             font-size: 13px;
+        }
+        
+        .update-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-left: 10px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
         @media (max-width: 768px) {
@@ -304,6 +411,15 @@
             
             .charts-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -333,72 +449,169 @@
                         <option value="300">5 minutes</option>
                     </select>
                 </div>
-                <button class="btn" onclick="refreshDashboard()">🔄 Refresh Now</button>
+                <button class="btn" onclick="refreshCurrentTab()">🔄 Refresh Now</button>
             </div>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" data-tab="alerts" onclick="switchTab('alerts')">⚠️ Alerts</button>
+            <button class="nav-tab" data-tab="logs" onclick="switchTab('logs')">📝 Logs</button>
         </div>
         
         <!-- Status Messages -->
         <div id="messageContainer"></div>
         
-        <!-- Metrics Grid -->
-        <div class="metrics-grid" id="metricsGrid">
-            <div class="metric-card">
-                <div class="metric-label">CPU Usage</div>
-                <div class="metric-value" id="cpuValue">-</div>
-                <div class="metric-unit">% of total</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Memory Usage</div>
-                <div class="metric-value" id="memoryValue">-</div>
-                <div class="metric-unit">% of total</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Running Processes</div>
-                <div class="metric-value" id="processCount">-</div>
-                <div class="metric-unit">active processes</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">System Health</div>
-                <div class="metric-value" id="healthStatus">Good</div>
-                <div class="metric-unit">normal operation</div>
-            </div>
-        </div>
-        
-        <!-- Charts Grid -->
-        <div class="charts-grid">
-            <!-- CPU Timeline Chart -->
-            <div class="chart-container">
-                <h3 class="chart-title">CPU Usage Over Time</h3>
-                <div class="chart-wrapper">
-                    <canvas id="cpuChart"></canvas>
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <!-- Metrics Grid -->
+            <div class="metrics-grid" id="metricsGrid">
+                <div class="metric-card">
+                    <div class="metric-label">CPU Usage</div>
+                    <div class="metric-value" id="cpuValue">-</div>
+                    <div class="metric-unit">% of total</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Memory Usage</div>
+                    <div class="metric-value" id="memoryValue">-</div>
+                    <div class="metric-unit">% of total</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Running Processes</div>
+                    <div class="metric-value" id="processCount">-</div>
+                    <div class="metric-unit">active processes</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">System Health</div>
+                    <div class="metric-value" id="healthStatus">Good</div>
+                    <div class="metric-unit">normal operation</div>
                 </div>
             </div>
             
-            <!-- Memory Timeline Chart -->
-            <div class="chart-container">
-                <h3 class="chart-title">Memory Usage Over Time</h3>
-                <div class="chart-wrapper">
-                    <canvas id="memoryChart"></canvas>
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <!-- CPU Timeline Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">CPU Usage Over Time</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Memory Timeline Chart -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Memory Usage Over Time</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Grid Row 2 -->
+            <div class="charts-grid">
+                <!-- Top Processes by CPU -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Top 10 Processes by CPU</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="topCpuChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Top Processes by Memory -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Top 10 Processes by Memory</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="topMemoryChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <!-- Charts Grid Row 2 -->
-        <div class="charts-grid">
-            <!-- Top Processes by CPU -->
-            <div class="chart-container">
-                <h3 class="chart-title">Top 10 Processes by CPU</h3>
-                <div class="chart-wrapper">
-                    <canvas id="topCpuChart"></canvas>
+        <!-- ALERTS TAB -->
+        <div id="alerts" class="tab-content">
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Active Alerts <span id="alertsUpdateIndicator"></span></h3>
+                    <div class="table-controls">
+                        <select id="alertsSeverityFilter" onchange="updateAlertsTable()">
+                            <option value="">All Severities</option>
+                            <option value="HIGH">High</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="LOW">Low</option>
+                        </select>
+                        <button class="btn" onclick="updateAlertsTable()">🔄 Refresh</button>
+                    </div>
                 </div>
+                
+                <div id="alertsLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading alerts...</p>
+                </div>
+                
+                <table id="alertsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Severity</th>
+                            <th style="width: 25%;">Type</th>
+                            <th style="width: 30%;">Message</th>
+                            <th style="width: 20%;">Process</th>
+                            <th style="width: 10%;">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTableBody">
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <div class="empty-state-icon">ℹ️</div>
+                                <p>No alerts to display</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            
-            <!-- Top Processes by Memory -->
-            <div class="chart-container">
-                <h3 class="chart-title">Top 10 Processes by Memory</h3>
-                <div class="chart-wrapper">
-                    <canvas id="topMemoryChart"></canvas>
+        </div>
+        
+        <!-- LOGS TAB -->
+        <div id="logs" class="tab-content">
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">System Logs <span id="logsUpdateIndicator"></span></h3>
+                    <div class="table-controls">
+                        <select id="logsLevelFilter" onchange="updateLogsTable()">
+                            <option value="INFO">Info</option>
+                            <option value="WARNING">Warning</option>
+                            <option value="ERROR">Error</option>
+                            <option value="DEBUG">Debug</option>
+                            <option value="ALL">All Levels</option>
+                        </select>
+                        <input type="number" id="logsLimit" min="10" max="1000" value="100" placeholder="Limit" style="width: 80px;" onchange="updateLogsTable()">
+                        <button class="btn" onclick="updateLogsTable()">🔄 Refresh</button>
+                    </div>
                 </div>
+                
+                <div id="logsLoading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading logs...</p>
+                </div>
+                
+                <table id="logsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Timestamp</th>
+                            <th style="width: 10%;">Level</th>
+                            <th style="width: 25%;">Logger</th>
+                            <th style="width: 45%;">Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                <div class="empty-state-icon">ℹ️</div>
+                                <p>No logs to display</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
         
@@ -415,320 +628,297 @@
     </div>
     
     <!-- Configuration Modal -->
-    <div id="configModal" style="display: none;">
-        <div style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; margin: 100px auto;">
-            <h2>API Configuration</h2>
+    <div id="configModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; box-shadow: 0 20px 25px rgba(0,0,0,0.15);">
+            <h2 style="margin-bottom: 20px; color: #333;">API Configuration</h2>
             <div style="margin: 20px 0;">
-                <label>API Server URL:</label>
-                <input type="text" id="apiUrl" value="http://localhost:5001" style="width: 100%; padding: 10px; margin-top: 5px;">
+                <label style="color: #333; font-weight: 500;">API Server URL:</label>
+                <input type="text" id="apiUrl" value="http://localhost:8000" style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
             </div>
             <div style="margin: 20px 0;">
-                <label>Username:</label>
-                <input type="text" id="username" value="admin" style="width: 100%; padding: 10px; margin-top: 5px;">
+                <label style="color: #333; font-weight: 500;">API Token:</label>
+                <input type="password" id="apiToken" value="" placeholder="Leave empty for no authentication" style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px;">
             </div>
-            <div style="margin: 20px 0;">
-                <label>Password:</label>
-                <input type="password" id="password" value="admin123" style="width: 100%; padding: 10px; margin-top: 5px;">
-            </div>
-            <button class="btn" onclick="configureAndLogin()" style="width: 100%;">Login</button>
+            <button class="btn" onclick="configureAndConnect()" style="width: 100%;">Connect</button>
         </div>
     </div>
     
     <script>
         // Global state
         const state = {
-            apiUrl: localStorage.getItem('apiUrl') || 'http://localhost:5001',
-            token: localStorage.getItem('apiToken') || null,
+            apiUrl: localStorage.getItem('apiUrl') || 'http://localhost:8000',
+            apiToken: localStorage.getItem('apiToken') || '',
             charts: {},
-            refreshInterval: null
+            refreshInterval: null,
+            currentTab: 'dashboard',
+            autoRefreshEnabled: true
         };
         
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
-            if (!state.token) {
-                showConfigModal();
-            } else {
-                initializeDashboard();
-            }
+            initializeDashboard();
         });
-        
-        // Show configuration modal
-        function showConfigModal() {
-            document.getElementById('configModal').style.display = 'block';
-        }
-        
-        // Configure API and login
-        async function configureAndLogin() {
-            state.apiUrl = document.getElementById('apiUrl').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                const response = await fetch(`${state.apiUrl}/api/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                if (!response.ok) {
-                    showMessage('Login failed. Check credentials.', 'error');
-                    return;
-                }
-                
-                const data = await response.json();
-                state.token = data.data.token;
-                localStorage.setItem('apiUrl', state.apiUrl);
-                localStorage.setItem('apiToken', state.token);
-                
-                document.getElementById('configModal').style.display = 'none';
-                initializeDashboard();
-            } catch (error) {
-                showMessage(`Login error: ${error.message}`, 'error');
-            }
-        }
         
         // Initialize dashboard
         function initializeDashboard() {
-            refreshDashboard();
-            
-            // Set up auto-refresh
-            const refreshRate = parseInt(document.getElementById('refreshRate').value) * 1000;
-            if (state.refreshInterval) clearInterval(state.refreshInterval);
-            state.refreshInterval = setInterval(refreshDashboard, refreshRate);
+            // Set up auto-refresh based on selected rate
+            setupAutoRefresh();
             
             // Update refresh rate when changed
-            document.getElementById('refreshRate').addEventListener('change', (e) => {
-                if (state.refreshInterval) clearInterval(state.refreshInterval);
-                state.refreshInterval = setInterval(refreshDashboard, parseInt(e.target.value) * 1000);
+            document.getElementById('refreshRate').addEventListener('change', setupAutoRefresh);
+            
+            // Load initial data
+            refreshCurrentTab();
+        }
+        
+        // Setup auto-refresh
+        function setupAutoRefresh() {
+            const refreshRate = parseInt(document.getElementById('refreshRate').value) * 1000;
+            if (state.refreshInterval) clearInterval(state.refreshInterval);
+            state.refreshInterval = setInterval(refreshCurrentTab, refreshRate);
+        }
+        
+        // Switch tab
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
             });
+            
+            // Remove active class from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            state.currentTab = tabName;
+            
+            // Load data for the tab
+            if (tabName === 'dashboard') {
+                refreshDashboard();
+            } else if (tabName === 'alerts') {
+                updateAlertsTable();
+            } else if (tabName === 'logs') {
+                updateLogsTable();
+            }
+        }
+        
+        // Refresh current tab
+        function refreshCurrentTab() {
+            if (state.currentTab === 'dashboard') {
+                refreshDashboard();
+            } else if (state.currentTab === 'alerts') {
+                updateAlertsTable();
+            } else if (state.currentTab === 'logs') {
+                updateLogsTable();
+            }
         }
         
         // Refresh dashboard
         async function refreshDashboard() {
-            const hours = parseInt(document.getElementById('timeRange').value);
-            
             showLoading(true);
             
             try {
-                // Fetch all data in parallel
-                const [cpuTimeline, memoryTimeline, topCpu, topMemory, summary] = await Promise.all([
-                    apiRequest(`/api/charts/cpu-timeline?hours=${hours}`),
-                    apiRequest(`/api/charts/memory-timeline?hours=${hours}`),
-                    apiRequest(`/api/charts/top-processes-cpu?hours=${hours}&limit=10`),
-                    apiRequest(`/api/charts/top-processes-memory?hours=${hours}&limit=10`),
-                    apiRequest(`/api/charts/metrics-summary?hours=${hours}`)
+                // Fetch status and alerts
+                const [status, alerts] = await Promise.all([
+                    apiRequest('/status'),
+                    apiRequest('/alerts')
                 ]);
                 
                 // Update metrics
-                updateMetrics(summary);
-                
-                // Update charts
-                updateCpuChart(cpuTimeline);
-                updateMemoryChart(memoryTimeline);
-                updateTopCpuChart(topCpu);
-                updateTopMemoryChart(topMemory);
+                updateMetrics(status, alerts);
                 
                 // Update last update time
                 document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
                 
-                showMessage('Dashboard updated successfully', 'success', 3000);
+                showMessage('Dashboard updated successfully', 'success', 2000);
             } catch (error) {
-                showMessage(`Error: ${error.message}`, 'error');
+                if (!error.message.includes('Configuration')) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                }
             } finally {
                 showLoading(false);
             }
         }
         
+        // Update metrics
+        function updateMetrics(status, alerts) {
+            if (!status) return;
+            
+            document.getElementById('cpuValue').textContent = status.avg_cpu_percent ? status.avg_cpu_percent.toFixed(1) : '-';
+            document.getElementById('memoryValue').textContent = (status.total_memory_mb / (1024 * 16)).toFixed(1) || '-'; // Assuming 16GB RAM
+            document.getElementById('processCount').textContent = status.process_count || '-';
+            
+            // Determine health status
+            let health = 'Good';
+            let healthColor = '#10b981';
+            if (status.avg_cpu_percent > 80 || (status.total_memory_mb / (1024 * 16)) * 100 > 80) {
+                health = 'Warning';
+                healthColor = '#f59e0b';
+            }
+            if (status.avg_cpu_percent > 95 || (status.total_memory_mb / (1024 * 16)) * 100 > 95) {
+                health = 'Critical';
+                healthColor = '#ef4444';
+            }
+            document.getElementById('healthStatus').textContent = health;
+        }
+        
+        // Update Alerts Table with AJAX
+        async function updateAlertsTable() {
+            const loadingEl = document.getElementById('alertsLoading');
+            const tableBodyEl = document.getElementById('alertsTableBody');
+            loadingEl.classList.add('active');
+            
+            try {
+                const alerts = await apiRequest('/alerts');
+                const severityFilter = document.getElementById('alertsSeverityFilter').value;
+                
+                let filteredAlerts = alerts.alerts || [];
+                if (severityFilter) {
+                    filteredAlerts = filteredAlerts.filter(a => (a.severity || a.get?.('severity')) === severityFilter);
+                }
+                
+                // Sort by timestamp descending
+                filteredAlerts.sort((a, b) => {
+                    const timeA = new Date(a.timestamp || a.get?.('timestamp') || 0);
+                    const timeB = new Date(b.timestamp || b.get?.('timestamp') || 0);
+                    return timeB - timeA;
+                });
+                
+                if (filteredAlerts.length === 0) {
+                    tableBodyEl.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-state-icon">✅</div><p>No alerts</p></td></tr>';
+                    showUpdateIndicator('alertsUpdateIndicator');
+                    return;
+                }
+                
+                tableBodyEl.innerHTML = filteredAlerts.map(alert => {
+                    const severity = alert.severity || 'UNKNOWN';
+                    const type = alert.type || 'Unknown';
+                    const message = alert.message || '';
+                    const processName = alert.process_name || '-';
+                    const timestamp = new Date(alert.timestamp).toLocaleTimeString();
+                    
+                    return `<tr>
+                        <td><span class="status-badge badge-${severity}">${severity}</span></td>
+                        <td>${escapeHtml(type)}</td>
+                        <td>${escapeHtml(message)}</td>
+                        <td>${escapeHtml(processName)}</td>
+                        <td>${timestamp}</td>
+                    </tr>`;
+                }).join('');
+                
+                showUpdateIndicator('alertsUpdateIndicator');
+            } catch (error) {
+                if (!error.message.includes('Configuration')) {
+                    tableBodyEl.innerHTML = `<tr><td colspan="5" style="color: #dc2626; padding: 20px; text-align: center;">Error loading alerts: ${error.message}</td></tr>`;
+                }
+            } finally {
+                loadingEl.classList.remove('active');
+            }
+        }
+        
+        // Update Logs Table with AJAX
+        async function updateLogsTable() {
+            const loadingEl = document.getElementById('logsLoading');
+            const tableBodyEl = document.getElementById('logsTableBody');
+            loadingEl.classList.add('active');
+            
+            try {
+                const logLevel = document.getElementById('logsLevelFilter').value;
+                const limit = parseInt(document.getElementById('logsLimit').value) || 100;
+                
+                const logs = await apiRequest(`/logs?limit=${limit}&level=${logLevel}`);
+                
+                if (!logs.logs || logs.logs.length === 0) {
+                    tableBodyEl.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="empty-state-icon">ℹ️</div><p>No logs to display</p></td></tr>';
+                    showUpdateIndicator('logsUpdateIndicator');
+                    return;
+                }
+                
+                tableBodyEl.innerHTML = logs.logs.map(log => {
+                    const level = log.level || 'INFO';
+                    const timestamp = log.timestamp || '-';
+                    const logger = log.logger || '-';
+                    const message = log.message || '';
+                    
+                    return `<tr>
+                        <td>${timestamp}</td>
+                        <td><span class="status-badge badge-${level}">${level}</span></td>
+                        <td><code style="background: #f5f7fa; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${escapeHtml(logger)}</code></td>
+                        <td><code style="background: #f5f7fa; padding: 2px 6px; border-radius: 3px; font-size: 12px;">${escapeHtml(message)}</code></td>
+                    </tr>`;
+                }).join('');
+                
+                showUpdateIndicator('logsUpdateIndicator');
+            } catch (error) {
+                if (!error.message.includes('Configuration')) {
+                    tableBodyEl.innerHTML = `<tr><td colspan="4" style="color: #dc2626; padding: 20px; text-align: center;">Error loading logs: ${error.message}</td></tr>`;
+                }
+            } finally {
+                loadingEl.classList.remove('active');
+            }
+        }
+        
+        // Show update indicator
+        function showUpdateIndicator(elementId) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = '<span class="update-indicator" title="Just updated"></span>';
+            setTimeout(() => {
+                el.innerHTML = '';
+            }, 3000);
+        }
+        
         // API request helper
         async function apiRequest(endpoint) {
-            const response = await fetch(`${state.apiUrl}${endpoint}`, {
-                headers: { 'Authorization': `Bearer ${state.token}` }
+            if (!state.apiUrl) {
+                showConfigModal();
+                throw new Error('Configuration required');
+            }
+            
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (state.apiToken) {
+                headers['X-API-Token'] = state.apiToken;
+            }
+            
+            const response = await fetch(`${state.apiUrl}/api${endpoint}`, {
+                headers: headers
             });
             
             if (!response.ok) {
-                if (response.status === 401) {
-                    state.token = null;
+                if (response.status === 401 || response.status === 403) {
+                    state.apiToken = null;
                     localStorage.removeItem('apiToken');
                     showConfigModal();
-                    throw new Error('Authentication expired');
+                    throw new Error('Authentication failed');
                 }
                 throw new Error(`API error: ${response.statusText}`);
             }
             
             const data = await response.json();
-            return data.data;
+            return data;
         }
         
-        // Update metric cards
-        function updateMetrics(summary) {
-            if (!summary || !summary.summary) return;
-            
-            const s = summary.summary;
-            document.getElementById('cpuValue').textContent = s.cpu_avg ? s.cpu_avg.toFixed(1) : '-';
-            document.getElementById('memoryValue').textContent = s.memory_avg_percent ? s.memory_avg_percent.toFixed(1) : '-';
-            document.getElementById('processCount').textContent = s.unique_processes || '-';
-            
-            // Determine health status
-            let health = 'Good';
-            if (s.cpu_max > 80 || s.memory_max_percent > 80) health = 'Warning';
-            if (s.cpu_max > 95 || s.memory_max_percent > 95) health = 'Critical';
-            document.getElementById('healthStatus').textContent = health;
+        // Show configuration modal
+        function showConfigModal() {
+            document.getElementById('configModal').style.display = 'flex';
         }
         
-        // Update CPU chart
-        function updateCpuChart(data) {
-            const ctx = document.getElementById('cpuChart');
-            if (!ctx) return;
+        // Configure and connect
+        async function configureAndConnect() {
+            state.apiUrl = document.getElementById('apiUrl').value;
+            state.apiToken = document.getElementById('apiToken').value;
             
-            const labels = data.timeline.map(d => new Date(d.timestamp).toLocaleTimeString());
-            const cpuValues = data.timeline.map(d => d.system_cpu);
+            localStorage.setItem('apiUrl', state.apiUrl);
+            localStorage.setItem('apiToken', state.apiToken);
             
-            if (state.charts.cpu) state.charts.cpu.destroy();
-            
-            state.charts.cpu = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'System CPU %',
-                        data: cpuValues,
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { color: '#666' },
-                            grid: { color: 'rgba(0,0,0,0.05)' }
-                        },
-                        x: { ticks: { color: '#666' }, grid: { display: false } }
-                    }
-                }
-            });
-        }
-        
-        // Update Memory chart
-        function updateMemoryChart(data) {
-            const ctx = document.getElementById('memoryChart');
-            if (!ctx) return;
-            
-            const labels = data.timeline.map(d => new Date(d.timestamp).toLocaleTimeString());
-            const memoryValues = data.timeline.map(d => d.system_memory_percent);
-            
-            if (state.charts.memory) state.charts.memory.destroy();
-            
-            state.charts.memory = new Chart(ctx, {
-                type: 'area',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Memory %',
-                        data: memoryValues,
-                        borderColor: '#764ba2',
-                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { color: '#666' },
-                            grid: { color: 'rgba(0,0,0,0.05)' }
-                        },
-                        x: { ticks: { color: '#666' }, grid: { display: false } }
-                    }
-                }
-            });
-        }
-        
-        // Update Top CPU chart
-        function updateTopCpuChart(data) {
-            const ctx = document.getElementById('topCpuChart');
-            if (!ctx || !data.processes || data.processes.length === 0) return;
-            
-            const labels = data.processes.map(p => p.name);
-            const cpuValues = data.processes.map(p => p.avg_cpu);
-            
-            if (state.charts.topCpu) state.charts.topCpu.destroy();
-            
-            state.charts.topCpu = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Avg CPU %',
-                        data: cpuValues,
-                        backgroundColor: '#667eea',
-                        borderRadius: 6,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#666' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-                        y: { ticks: { color: '#666' }, grid: { display: false } }
-                    }
-                }
-            });
-        }
-        
-        // Update Top Memory chart
-        function updateTopMemoryChart(data) {
-            const ctx = document.getElementById('topMemoryChart');
-            if (!ctx || !data.processes || data.processes.length === 0) return;
-            
-            const labels = data.processes.map(p => p.name);
-            const memoryValues = data.processes.map(p => p.avg_memory_mb);
-            
-            if (state.charts.topMemory) state.charts.topMemory.destroy();
-            
-            state.charts.topMemory = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Avg Memory MB',
-                        data: memoryValues,
-                        backgroundColor: '#764ba2',
-                        borderRadius: 6,
-                        borderSkipped: false
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { color: '#666' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-                        y: { ticks: { color: '#666' }, grid: { display: false } }
-                    }
-                }
-            });
+            document.getElementById('configModal').style.display = 'none';
+            refreshCurrentTab();
         }
         
         // Show/hide loading indicator
@@ -747,6 +937,14 @@
             if (duration > 0) {
                 setTimeout(() => div.remove(), duration);
             }
+        }
+        
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     </script>
 </body>
