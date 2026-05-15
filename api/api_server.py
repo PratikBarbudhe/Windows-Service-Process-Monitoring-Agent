@@ -40,7 +40,9 @@ def run_scan() -> dict:
 
 @app.get("/alerts", dependencies=[Depends(verify_token)])
 def get_alerts() -> dict:
-    return {"alerts": [alert.to_dict() for alert in agent.alerts]}
+    if agent.alerts:
+        return {"alerts": [alert.to_dict() for alert in agent.alerts]}
+    return {"alerts": agent.load_latest_alerts()}
 
 
 @app.get("/processes", dependencies=[Depends(verify_token)])

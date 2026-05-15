@@ -19,7 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.config import settings
-from app.monitoring import MonitoringAgent
+from app.monitoring import MonitoringAgent, attach_group_labels, build_process_row
 
 SEVERITY_COLORS = {
     "CRITICAL": "#ef4444",
@@ -126,21 +126,35 @@ def _api_headers(api_token: str) -> dict[str, str]:
 
 def _fetch_api_data(api_base_url: str, api_token: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     base = api_base_url.rstrip("/")
-    processes_resp = requests.get(
-        f"{base}/processes",
-        headers=_api_headers(api_token),
-        timeout=15,
-    )
+    headers = _api_headers(api_token)
+
+    health_resp = requests.get(f"{base}/health", timeout=10)
+    if health_resp.status_code != 200:
+        raise ConnectionError(
+            f"API health check failed ({health_resp.status_code}): {health_resp.text[:200]}"
+        )
+
+    processes_resp = requests.get(f"{base}/processes", headers=headers, timeout=30)
+    if processes_resp.status_code == 401:
+        raise PermissionError("Invalid API token (HTTP 401). Check DASHBOARD_API_TOKEN / API_TOKEN.")
     processes_resp.raise_for_status()
-    alerts_resp = requests.get(
-        f"{base}/alerts",
-        headers=_api_headers(api_token),
-        timeout=15,
-    )
+
+    alerts_resp = requests.get(f"{base}/alerts", headers=headers, timeout=15)
     alerts_resp.raise_for_status()
 
     processes = processes_resp.json().get("processes", [])
     alerts = alerts_resp.json().get("alerts", [])
+
+    if not alerts:
+        scan_resp = requests.post(f"{base}/scan", headers=headers, timeout=60)
+        if scan_resp.status_code == 401:
+            raise PermissionError("Invalid API token for /scan (HTTP 401).")
+        scan_resp.raise_for_status()
+        scan_payload = scan_resp.json()
+        alerts = scan_payload.get("alerts", [])
+        if not processes:
+            processes = scan_payload.get("processes", [])
+
     return processes, alerts
 
 
@@ -396,19 +410,15 @@ def _sample_live_processes(sample_seconds: float = 1.0) -> list[dict[str, Any]]:
     for proc in procs:
         try:
             mem_info = proc.info.get("memory_info")
-            memory_mb = round((mem_info.rss / 1024 / 1024) if mem_info else 0.0, 2)
-            rows.append(
-                {
-                    "pid": proc.info.get("pid"),
-                    "name": proc.info.get("name") or "unknown",
-                    "username": proc.info.get("username"),
-                    "exe": proc.info.get("exe"),
-                    "cpu_percent": round(float(proc.cpu_percent(interval=None)), 2),
-                    "memory_mb": memory_mb,
-                }
-            )
+            memory_mb = (mem_info.rss / 1024 / 1024) if mem_info else 0.0
+            cpu = float(proc.cpu_percent(interval=None))
+            rows.append(build_process_row(proc, cpu_percent=cpu, memory_mb=memory_mb))
         except (psutil.AccessDenied, psutil.NoSuchProcess):
             continue
+
+    group_labels = attach_group_labels([row["name"] for row in rows])
+    for row, group_label in zip(rows, group_labels, strict=True):
+        row["group_label"] = group_label
     return rows
 
 
@@ -434,6 +444,23 @@ def render_processes(processes: list[dict[str, Any]], allow_live_sampling: bool 
         return
 
     df = pd.DataFrame(processes)
+    if "display_name" not in df.columns and "name" in df.columns:
+        df["display_name"] = df["name"]
+    if "group_label" not in df.columns and "name" in df.columns:
+        df["group_label"] = attach_group_labels(df["name"].astype(str).tolist())
+    preferred_cols = [
+        "pid",
+        "display_name",
+        "group_label",
+        "name",
+        "cpu_percent",
+        "memory_mb",
+        "username",
+        "exe",
+    ]
+    ordered = [col for col in preferred_cols if col in df.columns]
+    extra = [col for col in df.columns if col not in ordered]
+    df = df[ordered + extra]
     if {"cpu_percent", "memory_mb"}.issubset(df.columns):
         df = df.sort_values(by=["cpu_percent", "memory_mb"], ascending=False)
     if platform.system() != "Windows":

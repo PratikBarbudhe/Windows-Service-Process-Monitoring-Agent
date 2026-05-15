@@ -8,10 +8,18 @@ from typing import Optional
 class ProcessInfo:
     pid: int
     name: str
+    display_name: str = ""
+    group_label: str = ""
     username: Optional[str] = None
     exe: Optional[str] = None
     cpu_percent: float = 0.0
     memory_mb: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not self.display_name:
+            self.display_name = self.name
+        if not self.group_label:
+            self.group_label = self.display_name
 
     def to_dict(self) -> dict:
         return asdict(self)
