@@ -19,7 +19,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.config import settings
-from app.monitoring import MonitoringAgent, attach_group_labels, build_process_row
+from app.constants import DEFAULT_REFRESH_LABEL, REFRESH_INTERVALS, TOP_RESOURCE_LIMIT
+from app.monitoring import MonitoringAgent
+from app.process_display import attach_group_labels, build_process_row, normalize_cpu_percent
+from app.process_ranking import rank_top_processes
 
 SEVERITY_COLORS = {
     "CRITICAL": "#ef4444",
@@ -113,11 +116,15 @@ def inject_css() -> None:
     )
 
 
-def _load_latest_payload() -> dict:
+def _load_latest_payload() -> dict[str, Any]:
     latest_file = settings.log_dir / "alerts_latest.json"
     if not latest_file.exists():
         return {}
-    return json.loads(latest_file.read_text(encoding="utf-8"))
+    try:
+        return json.loads(latest_file.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        st.warning(f"Could not parse {latest_file}. Run a new scan.")
+        return {}
 
 
 def _api_headers(api_token: str) -> dict[str, str]:
@@ -201,6 +208,28 @@ def render_header(last_updated: str, status_text: str, status_color: str) -> Non
         )
 
 
+def _format_refresh_label(seconds: int) -> str:
+    for label, value in REFRESH_INTERVALS.items():
+        if value == seconds:
+            return label
+    if seconds < 60:
+        return f"{seconds} sec"
+    return f"{seconds // 60} min"
+
+
+def _ensure_processes(
+    processes: list[dict[str, Any]],
+    *,
+    use_live_sample: bool,
+) -> list[dict[str, Any]]:
+    if processes:
+        return processes
+    if use_live_sample and platform.system() == "Windows":
+        with st.spinner("Sampling live processes..."):
+            return _sample_live_processes(sample_seconds=settings.cpu_sample_seconds)
+    return []
+
+
 def render_sidebar() -> tuple[str, bool, int, str, str, str]:
     st.sidebar.markdown("## Navigation")
     page = st.sidebar.radio(
@@ -223,14 +252,17 @@ def render_sidebar() -> tuple[str, bool, int, str, str, str]:
     )
     st.sidebar.markdown("---")
     auto_refresh = st.sidebar.toggle("Auto refresh", value=True)
-    refresh_interval = st.sidebar.slider(
-        "Refresh every (minutes)",
-        min_value=5,
-        max_value=60,
-        value=5,
+    refresh_labels = list(REFRESH_INTERVALS.keys())
+    refresh_choice = st.sidebar.select_slider(
+        "Refresh every",
+        options=refresh_labels,
+        value=DEFAULT_REFRESH_LABEL,
+        help="Interval from 10 seconds up to 10 minutes.",
     )
+    refresh_seconds = REFRESH_INTERVALS[refresh_choice]
+    st.sidebar.caption(f"Auto refresh interval: {refresh_choice}")
     st.sidebar.caption("Theme: Dark SOC")
-    return page, auto_refresh, refresh_interval, data_source, api_base_url, api_token
+    return page, auto_refresh, refresh_seconds, data_source, api_base_url, api_token
 
 
 def render_toolbar(
@@ -361,10 +393,72 @@ def render_charts(alerts: list[dict[str, Any]]) -> None:
         st.plotly_chart(fig_line, use_container_width=True)
 
 
-def render_alerts(alerts: list[dict[str, Any]]) -> None:
+def render_alerts(
+    processes: list[dict[str, Any]],
+    alerts: list[dict[str, Any]],
+    *,
+    use_live_sample: bool = False,
+) -> None:
     st.subheader("Live Alerts")
+
+    metric_choice = st.radio(
+        "Top resource consumers",
+        options=["CPU", "Memory"],
+        horizontal=True,
+        help="Show the 5 processes using the most CPU or memory.",
+    )
+    sort_metric = "cpu" if metric_choice == "CPU" else "memory"
+
+    processes = _ensure_processes(processes, use_live_sample=use_live_sample)
+    top_rows = rank_top_processes(
+        processes,
+        sort_by=sort_metric,
+        limit=TOP_RESOURCE_LIMIT,
+    )
+
+    if top_rows:
+        top_df = pd.DataFrame(top_rows)
+        value_col = "cpu_percent" if sort_metric == "cpu" else "memory_mb"
+        value_label = "CPU %" if sort_metric == "cpu" else "Memory (MB)"
+
+        fig = px.bar(
+            top_df,
+            x="display_name",
+            y=value_col,
+            title=f"Top {TOP_RESOURCE_LIMIT} processes by {metric_choice}",
+            labels={value_col: value_label, "display_name": "Process"},
+            template="plotly_dark",
+            text=value_col,
+        )
+        fig.update_traces(texttemplate="%{text:.1f}", textposition="outside")
+        fig.update_layout(height=360, xaxis_tickangle=-25)
+        st.plotly_chart(fig, use_container_width=True)
+
+        table_cols = ["rank", "pid", "display_name", "cpu_percent", "memory_mb"]
+        if "group_label" in top_df.columns:
+            table_cols.append("group_label")
+        st.dataframe(
+            top_df[table_cols].rename(
+                columns={
+                    "rank": "#",
+                    "display_name": "Process",
+                    "cpu_percent": "CPU %",
+                    "memory_mb": "Memory (MB)",
+                    "group_label": "Group",
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info(
+            "No process data available. Run **Run Scan**, switch to **Remote API**, "
+            "or open the **Processes** page with live sampling enabled."
+        )
+
+    st.markdown("#### Threshold alerts")
     if not alerts:
-        st.success("No active alerts in the latest scan.")
+        st.success("No threshold alerts in the latest scan.")
         return
 
     severity_filter = st.selectbox(
@@ -392,7 +486,8 @@ def render_alerts(alerts: list[dict[str, Any]]) -> None:
         else:
             st.info(msg)
 
-    st.dataframe(pd.DataFrame(visible_alerts), use_container_width=True, hide_index=True)
+    if visible_alerts:
+        st.dataframe(pd.DataFrame(visible_alerts), use_container_width=True, hide_index=True)
 
 
 def _sample_live_processes(sample_seconds: float = 1.0) -> list[dict[str, Any]]:
@@ -411,7 +506,8 @@ def _sample_live_processes(sample_seconds: float = 1.0) -> list[dict[str, Any]]:
         try:
             mem_info = proc.info.get("memory_info")
             memory_mb = (mem_info.rss / 1024 / 1024) if mem_info else 0.0
-            cpu = float(proc.cpu_percent(interval=None))
+            raw_cpu = float(proc.cpu_percent(interval=None))
+            cpu = normalize_cpu_percent(raw_cpu)
             rows.append(build_process_row(proc, cpu_percent=cpu, memory_mb=memory_mb))
         except (psutil.AccessDenied, psutil.NoSuchProcess):
             continue
@@ -433,7 +529,10 @@ def render_processes(processes: list[dict[str, Any]], allow_live_sampling: bool 
             disabled=not allow_live_sampling,
         )
     with c2:
-        st.caption("Live sampling gives more accurate CPU usage than stale log snapshots.")
+        st.caption(
+            "Live sampling gives more accurate CPU usage than stale log snapshots. "
+            "CPU % is normalized to total system capacity (0–100), matching Task Manager."
+        )
 
     if live_mode and allow_live_sampling:
         with st.spinner("Sampling process CPU usage..."):
@@ -484,7 +583,7 @@ def main() -> None:
     st.set_page_config(page_title="Windows Monitoring Agent", layout="wide", initial_sidebar_state="expanded")
     inject_css()
 
-    page, auto_refresh, refresh_interval, data_source, api_base_url, api_token = render_sidebar()
+    page, auto_refresh, refresh_seconds, data_source, api_base_url, api_token = render_sidebar()
 
     payload: dict[str, Any] = {}
     processes: list[dict[str, Any]] = []
@@ -510,24 +609,26 @@ def main() -> None:
     render_toolbar(alerts, data_source, api_base_url, api_token)
     st.markdown("")
 
-    if not payload:
+    live_sample = data_source == "Local Logs" and platform.system() == "Windows"
+    if not processes and not payload and not source_error:
         render_empty_state()
 
     if page == "Dashboard":
         render_metrics(processes, alerts)
         render_charts(alerts)
-        render_alerts(alerts)
+        render_alerts(processes, alerts, use_live_sample=live_sample)
     elif page == "Processes":
-        render_processes(processes, allow_live_sampling=(data_source == "Local Logs"))
+        render_processes(processes, allow_live_sampling=live_sample)
     elif page == "Alerts":
-        render_alerts(alerts)
+        render_alerts(processes, alerts, use_live_sample=live_sample)
         render_charts(alerts)
     else:
         render_services()
 
     if auto_refresh:
-        with st.spinner(f"Auto refresh in {refresh_interval} minute(s)..."):
-            time.sleep(refresh_interval * 60)
+        wait_label = _format_refresh_label(refresh_seconds)
+        with st.spinner(f"Auto refresh in {wait_label}..."):
+            time.sleep(refresh_seconds)
         st.rerun()
 
 

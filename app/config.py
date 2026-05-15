@@ -27,6 +27,8 @@ class Settings:
     dashboard_api_base_url: str = os.getenv("DASHBOARD_API_BASE_URL", "http://127.0.0.1:8000")
     dashboard_api_token: str = os.getenv("DASHBOARD_API_TOKEN", os.getenv("API_TOKEN", "change-me"))
     scan_interval: int = int(os.getenv("SCAN_INTERVAL", "60"))
+    cpu_alert_threshold: float = float(os.getenv("CPU_ALERT_THRESHOLD", "85"))
+    cpu_sample_seconds: float = float(os.getenv("CPU_SAMPLE_SECONDS", "1.0"))
 
 
 settings = Settings()

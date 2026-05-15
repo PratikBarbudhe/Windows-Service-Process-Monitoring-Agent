@@ -1,5 +1,6 @@
-from app.monitoring import (
+from app.process_display import (
     attach_group_labels,
+    normalize_cpu_percent,
     resolve_display_name,
     should_skip_high_cpu_alert,
 )
@@ -27,7 +28,22 @@ def test_group_label_counts() -> None:
 
 def test_skip_idle_cpu_alert_only() -> None:
     assert should_skip_high_cpu_alert(name="System Idle Process", display_name="System Idle Process")
-    assert not should_skip_high_cpu_alert(name="python.exe", display_name="monitoring.py")
+    assert not should_skip_high_cpu_alert(name="chrome.exe", display_name="Google Chrome")
+
+
+def test_normalize_cpu_percent_matches_task_manager_scale(monkeypatch) -> None:
+    monkeypatch.setattr("app.process_display.cpu_count_logical", lambda: 8)
+    assert normalize_cpu_percent(101.4) == 12.68
+    assert normalize_cpu_percent(800.0) == 100.0
+    assert normalize_cpu_percent(-5.0) == 0.0
+
+
+def test_skip_agent_stack_for_cpu_alerts() -> None:
+    assert should_skip_high_cpu_alert(name="uvicorn.exe", display_name="uvicorn.exe")
+    assert should_skip_high_cpu_alert(
+        name="python.exe",
+        display_name="dashboard_streamlit.py - dashboard",
+    )
 
 
 def test_python_inline_command_uses_friendly_name() -> None:
